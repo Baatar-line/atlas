@@ -674,19 +674,44 @@ export default function CreateForm({ kind, mode = 'create', initial, lockedConta
 
           <div className="flex flex-col gap-1.5">
             <span className={labelSpanClass}>Зураг <span className="text-[#f08a8a]">*</span> <span className="text-[rgba(242,237,227,.4)] font-normal">(дор хаяж 1, хамгийн ихдээ {MAX_IMAGES} зураг) — {images.length}/{MAX_IMAGES}</span></span>
+            {/* Tiles are 3:2 and cropped with bg-cover/bg-center — the exact
+                shape and crop every card on the site uses (aspect-[3/2] +
+                bg-cover bg-center, see the suggest/category/event rails). The
+                old 84px squares showed a different crop from the one that
+                ships, so a photo whose subject survives a square could lose
+                its head or its horizon once a card cut the top and bottom
+                off, with nothing in the form to warn about it.
+
+                No overflow-hidden here on purpose: the remove button hangs
+                off the tile's corner, and clipping it to the rounded box
+                would cut it in half. The background image is clipped by
+                border-radius on its own. */}
             <div className="flex flex-wrap gap-2.5">
               {images.map((img, i) => (
-                <div key={i} className="relative h-[84px] w-[84px] flex-shrink-0 rounded-[10px] bg-cover bg-center" style={{ backgroundImage: `url("${img}")` }}>
+                <div key={i} className="relative h-[88px] w-[132px] flex-shrink-0 rounded-[10px] border border-[rgba(242,237,227,.14)] bg-cover bg-center" style={{ backgroundImage: `url("${img}")` }}>
+                  {/* images[0] is the cover thumbnail everywhere it's read
+                      back (see the schema note on Place.images), so which one
+                      is first is a real decision, not just an order. */}
+                  <span
+                    className="absolute bottom-1.5 left-1.5 rounded-full px-2 py-[2px] text-[9.5px] font-extrabold uppercase tracking-[.04em]"
+                    style={i === 0
+                      ? { background: 'var(--accent,#E8B84B)', color: '#132a1f' }
+                      : { background: 'rgba(10,12,16,.72)', color: 'rgba(242,237,227,.85)' }}
+                  >
+                    {i === 0 ? 'Нүүр' : i + 1}
+                  </span>
                   <button onClick={() => removeImg(i)} className="absolute -top-1.5 -right-1.5 h-5 w-5 cursor-pointer rounded-full border-none bg-[#f08a8a] text-[11px] font-extrabold text-[#132a1f]">×</button>
                 </div>
               ))}
               {!imagesMaxed && (
-                <label className="flex h-[84px] w-[84px] flex-shrink-0 cursor-pointer items-center justify-center rounded-[10px] border-[1.5px] border-dashed border-[rgba(242,237,227,.25)] bg-[rgba(255,255,255,.03)] text-center text-[11px] text-[rgba(242,237,227,.5)] transition-colors duration-200 hover:border-[var(--accent,#E8B84B)]">
+                <label className="flex h-[88px] w-[132px] flex-shrink-0 cursor-pointer flex-col items-center justify-center gap-1 rounded-[10px] border-[1.5px] border-dashed border-[rgba(242,237,227,.25)] bg-[rgba(255,255,255,.03)] text-center text-[11px] text-[rgba(242,237,227,.5)] transition-colors duration-200 hover:border-[var(--accent,#E8B84B)]">
                   ＋ зураг
+                  <span className="text-[9.5px] text-[rgba(242,237,227,.35)]">хэвтээ 3:2</span>
                   <input type="file" accept="image/*" onChange={onImgFile} className="hidden" />
                 </label>
               )}
             </div>
+            <span className="text-[11px] leading-[1.45] text-[rgba(242,237,227,.45)]">Эхний зураг картын нүүр болно. Зураг бүр картан дээр яг ийм хэвтээ (3:2) хэлбэрээр, голоороо тайрагдан харагдана.</span>
           </div>
 
           {kind === 'place' && (
