@@ -696,6 +696,21 @@ export default class BigBangLayout extends React.Component<Props, any> {
     // it is the one layer about land being left alone, and it reads as that
     // against the reds and yellows of what people have built.
     { key: 'protected', file: 'mn-protected', label: 'Дархан цаазат газар', color: '#5BE37A', weight: 1.4, fill: true },
+    // Mixed LineString/Polygon in one file (see scripts/sync-osm-layers.ts):
+    // most of a river is a plain centerline, but wherever OSM also mapped its
+    // bank outline the same file carries a Polygon there instead — fill only
+    // paints the polygon parts, so a river reads as a thin blue thread that
+    // visibly widens into a ribbon at the handful of points its true width was
+    // actually digitized. Blue is the one hue not already claimed by another
+    // layer, which matters here since bridge markers sit directly on top of it.
+    { key: 'rivers', file: 'mn-rivers', label: 'Гол, мөрөн', color: '#3D8BFF', weight: 1.6, fill: true },
+    // Points only (see asMidpoints in the sync script) — a bridge is a few
+    // dozen metres of road, invisible as its own line at this zoom, so what's
+    // drawn is a marker for "a crossing exists here" rather than the segment
+    // itself. Cream rather than another saturated hue: it has to read as a
+    // marker sitting *on* the blue river line beneath it, not as one more
+    // colour competing with it.
+    { key: 'bridges', file: 'mn-bridges', label: 'Гүүр', color: '#F2EDE3', weight: 1.4, fill: true },
   ];
 
   // Brings the drawn layers in line with state.osmOn. Called from syncMainMap
