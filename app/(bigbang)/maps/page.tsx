@@ -187,14 +187,28 @@ function PinPanel({ V }: { V: any }) {
         </Section>
       )}
 
-      {/* One row: the maps link takes whatever width is left and Хаах stays at
-          its own label's width. Matching radius and vertical padding on both,
-          since side by side any difference in either reads as a mistake. */}
-      <div className="mt-auto flex flex-none items-center gap-2 pt-3">
-        <a href={p.mapUrl} target="_blank" rel="noopener" className="box-border flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-[11px] border border-[rgba(66,133,244,.4)] bg-[rgba(66,133,244,.14)] px-3.5 py-2.5 font-[inherit] text-xs font-bold text-[#8ab4f8] no-underline transition-all duration-200 hover:bg-[rgba(66,133,244,.22)]">
-          <MapPin size={14} className="flex-none" /><span className="truncate">{V.L.openMaps}</span><span className="ml-auto flex-none opacity-70">→</span>
-        </a>
-        <button onClick={V.closePin} className="flex-none cursor-pointer rounded-[11px] border border-[rgba(242,237,227,.25)] bg-transparent px-4 py-2.5 font-[inherit] text-xs font-bold text-[rgba(242,237,227,.75)] transition-all duration-250 hover:border-[var(--accent,#E8B84B)] hover:text-[var(--accent,#E8B84B)]">{V.L.close}</button>
+      {/* Both rows pushed to the bottom together via mt-auto on the wrapper —
+          putting it on just the last row would leave the detail button
+          floating in the middle whenever the content above is short. */}
+      <div className="mt-auto flex flex-none flex-col gap-2 pt-3">
+        {/* p.openDetail is unset for pins with nothing to open — synthetic
+            near-me-scatter points and the like (see pinDetailOpen in
+            BigBangLayout) — so the button only renders where a real detail
+            page exists behind it, rather than linking to nowhere. */}
+        {p.openDetail && (
+          <button onClick={p.openDetail} className="flex-none cursor-pointer rounded-[11px] border border-[var(--accent,#E8B84B)] bg-[var(--accent,#E8B84B)] px-3.5 py-2.5 font-[inherit] text-xs font-bold text-[#132a1f] transition-all duration-200 hover:opacity-85">
+            {V.L.detail} →
+          </button>
+        )}
+        {/* The maps link takes whatever width is left and Хаах stays at its
+            own label's width. Matching radius and vertical padding on both,
+            since side by side any difference in either reads as a mistake. */}
+        <div className="flex items-center gap-2">
+          <a href={p.mapUrl} target="_blank" rel="noopener" className="box-border flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-[11px] border border-[rgba(66,133,244,.4)] bg-[rgba(66,133,244,.14)] px-3.5 py-2.5 font-[inherit] text-xs font-bold text-[#8ab4f8] no-underline transition-all duration-200 hover:bg-[rgba(66,133,244,.22)]">
+            <MapPin size={14} className="flex-none" /><span className="truncate">{V.L.openMaps}</span><span className="ml-auto flex-none opacity-70">→</span>
+          </a>
+          <button onClick={V.closePin} className="flex-none cursor-pointer rounded-[11px] border border-[rgba(242,237,227,.25)] bg-transparent px-4 py-2.5 font-[inherit] text-xs font-bold text-[rgba(242,237,227,.75)] transition-all duration-250 hover:border-[var(--accent,#E8B84B)] hover:text-[var(--accent,#E8B84B)]">{V.L.close}</button>
+        </div>
       </div>
     </div>
   );
@@ -203,7 +217,10 @@ function PinPanel({ V }: { V: any }) {
 // Both map-control panels stack in the same corner, so they share one width.
 // Set by the longest button label in either — "Тарвага — тахлын эрсдэл" — since
 // the pills are whitespace-nowrap and overflow rather than reflow below it.
-const PANEL_W = 'w-[196px]';
+// Sized against the 10.5px pill text plus the dot, the pill's own padding and
+// the panel's: shrinking any of those is what let the width come down from the
+// 196px the 11.5px type needed.
+const PANEL_W = 'w-[176px]';
 
 export default function MapsPage() {
   const V: any = useContext(BigBangContext);
@@ -227,6 +244,110 @@ export default function MapsPage() {
 
         {!V.isMobile && (
           <div className="absolute left-4 top-4 z-20 flex flex-col items-start gap-2">
+            {/* Road/rail overlays from OpenStreetMap. Each button carries its
+                own layer's colour as a swatch, since over satellite imagery
+                the colour is the only thing telling the three lines apart. */}
+            <div className={`flex ${PANEL_W} flex-col gap-1 rounded-xl border border-[rgba(255,255,255,.16)] bg-[rgba(20,20,20,.78)] p-1.5 shadow-[0_4px_14px_rgba(0,0,0,.35)] backdrop-blur-[8px]`}>
+              {V.osmLayerOpts.map((o: any) => (
+                <button
+                  key={o.key}
+                  onClick={o.toggle}
+                  disabled={o.loading}
+                  className="flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 font-[inherit] text-[10.5px] font-bold transition-all duration-200 disabled:cursor-wait"
+                  style={{
+                    borderColor: o.active ? o.color : 'rgba(255,255,255,.18)',
+                    background: o.active ? 'rgba(255,255,255,.06)' : 'transparent',
+                    color: o.active ? o.color : 'rgba(242,237,227,.7)',
+                  }}
+                >
+                  <span className="h-[3px] w-3 flex-none rounded-full" style={{ background: o.active ? o.color : 'rgba(242,237,227,.35)' }} />
+                  {o.label}{o.loading ? '…' : ''}
+                </button>
+              ))}
+              {/* ODbL requires attribution wherever the data is drawn, so it
+                  appears with the layers rather than buried in a footer. Linked
+                  rather than plain text — OSM's attribution guidance asks for a
+                  route back to the licence, not just the credit line. */}
+              {V.osmAnyOn && (
+                <a
+                  href="https://www.openstreetmap.org/copyright"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-1 text-[9px] leading-tight text-[rgba(242,237,227,.35)] no-underline hover:text-[rgba(242,237,227,.6)]"
+                >© OpenStreetMap contributors</a>
+              )}
+            </div>
+
+            {/* Traveller hazard zones. One at a time by design — six
+                translucent fills stacked on each other turn into a single
+                brown wash that answers no question at all. */}
+            {/* Narrow enough to stop crowding the map, but not past the point
+                where the longest label ("Тарвага — тахлын эрсдэл") would wrap
+                — the pills are whitespace-nowrap, so going tighter overflows
+                rather than reflows. */}
+            <div className={`flex ${PANEL_W} flex-col gap-1 rounded-xl border border-[rgba(255,255,255,.16)] bg-[rgba(20,20,20,.78)] p-1.5 shadow-[0_4px_14px_rgba(0,0,0,.35)] backdrop-blur-[8px]`}>
+              <div className="flex items-center gap-1 px-1 text-[9px] font-bold uppercase tracking-[.06em] text-[rgba(242,237,227,.4)]">
+                <AlertTriangle size={10} className="flex-none" />Аюултай амьтдын бүс
+              </div>
+              {V.dangerOpts.map((z: any) => (
+                // The advice sits directly under the hazard it belongs to,
+                // not in a box at the foot of the list — down there it read as
+                // a note about the whole panel, and with six buttons between
+                // the press and the text it was easy to miss that anything
+                // had appeared at all.
+                <Fragment key={z.key}>
+                  <button
+                    onClick={z.pick}
+                    className="flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full border px-2 py-1 text-left font-[inherit] text-[10.5px] font-bold transition-all duration-200"
+                    style={{
+                      borderColor: z.active ? z.color : 'rgba(255,255,255,.18)',
+                      background: z.active ? 'rgba(255,255,255,.06)' : 'transparent',
+                      color: z.active ? z.color : 'rgba(242,237,227,.7)',
+                    }}
+                  >
+                    <span className="h-[7px] w-[7px] flex-none rounded-full" style={{ background: z.active ? z.color : 'rgba(242,237,227,.3)' }} />
+                    {z.label}
+                  </button>
+                  {z.active && (
+                    // Left border in the hazard's own colour, tying the text
+                    // to the button above it rather than leaving it floating
+                    // as another item in the same stack.
+                    <div
+                      className="mb-0.5 ml-2.5 flex flex-col gap-0.5 rounded-r-lg bg-[rgba(255,255,255,.04)] py-1 pl-2 pr-1.5"
+                      style={{ borderLeft: `2px solid ${z.color}` }}
+                    >
+                      {z.season && <div className="text-[9.5px] font-bold" style={{ color: z.color }}>{z.season}</div>}
+                      <div className="text-[10px] leading-[1.45] text-[rgba(242,237,227,.7)]">{z.advice}</div>
+                    </div>
+                  )}
+                </Fragment>
+              ))}
+              <div className="px-1 text-[9px] leading-tight text-[rgba(242,237,227,.35)]">Ойролцоох чиглүүлэг. Албан ёсны эх сурвалж биш.</div>
+            </div>
+          </div>
+        )}
+
+        {!V.isMobile && (
+          // items-end so the near-me panel below lines its right edge up with
+          // the pill row above it instead of hanging off the left.
+          <div className="absolute right-4 top-4 z-20 flex flex-col items-end gap-2">
+            <div className="flex items-center gap-2.5">
+              {V.mapZoomed && (
+                <button onClick={V.resetMap} className="cursor-pointer whitespace-nowrap rounded-full border border-[rgba(242,237,227,.3)] bg-[rgba(20,20,20,.72)] px-3.5 py-1.5 font-[inherit] text-xs font-bold text-[rgba(242,237,227,.85)] shadow-[0_4px_14px_rgba(0,0,0,.35)] backdrop-blur-[8px] transition-all duration-250 hover:border-[var(--accent,#E8B84B)] hover:text-[var(--accent,#E8B84B)]">← {V.L.resetMap}</button>
+              )}
+              <button onClick={V.openGlobe} title={V.L.globe} className="flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full border-none text-[#132a1f] shadow-[0_4px_14px_rgba(0,0,0,.35)] transition-transform duration-200 hover:-translate-y-0.5" style={{ background: V.accent }}><Globe size={15} /></button>
+              <div className="relative inline-grid grid-cols-3 rounded-full border border-[rgba(255,255,255,.16)] bg-[rgba(20,20,20,.72)] p-[3px] shadow-[0_4px_14px_rgba(0,0,0,.35)] backdrop-blur-[8px]">
+                <div className="absolute top-[3px] bottom-[3px] left-[3px] w-[calc((100%-6px)/3)] rounded-full transition-transform duration-300 ease-[cubic-bezier(.34,1.4,.5,1)]" style={{ background: V.accent, transform: `translateX(${V.pinPillShift})` }}></div>
+                {V.pinModeOpts.map((m: any, i: number) => (
+                  <button key={i} onClick={m.pick} className="relative z-[2] cursor-pointer whitespace-nowrap border-none bg-transparent px-3.5 py-[5px] font-[inherit] text-[11.5px] font-bold transition-colors duration-250" style={{ color: m.color }}>{m.label}</button>
+                ))}
+              </div>
+            </div>
+
+            {/* Moved under the Үзэсгэлэнт/Газрууд/Эвент pill rather than the
+                map's left edge — both control what the map is showing, so
+                grouping them reads as one decision area instead of two
+                unrelated corners. */}
             {!V.nearMeActive ? (
               <button
                 onClick={V.requestMyLocation}
@@ -237,12 +358,15 @@ export default function MapsPage() {
                 {V.locating ? 'Байршил тодорхойлж байна…' : 'Ойрхон газар олох'}
               </button>
             ) : (
-              <div className="flex flex-col gap-2 rounded-2xl border border-[rgba(255,255,255,.16)] bg-[rgba(20,20,20,.78)] p-2.5 shadow-[0_4px_14px_rgba(0,0,0,.35)] backdrop-blur-[8px]">
+              // Wide enough for all 5 radius pills on one row — at the old
+              // 240px they wrapped to two, which put 50/100км on a line of
+              // their own for no reason other than running out of width.
+              <div className="flex w-[360px] flex-col gap-2 rounded-2xl border border-[rgba(255,255,255,.16)] bg-[rgba(20,20,20,.78)] p-2.5 shadow-[0_4px_14px_rgba(0,0,0,.35)] backdrop-blur-[8px]">
                 <div className="flex items-center justify-between gap-3 px-0.5">
                   <span className="flex items-center gap-1.5 text-xs font-bold text-[var(--accent,#E8B84B)]"><LocateFixed size={13} /> {V.nearCount} олдлоо</span>
                   <button onClick={V.clearNearMe} className="cursor-pointer border-0 bg-transparent p-0 text-[11px] font-bold text-[rgba(242,237,227,.6)] hover:text-[var(--accent,#E8B84B)]">Хаах ×</button>
                 </div>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-nowrap justify-end gap-1.5">
                   {V.nearRadiusOpts.map((r: any, i: number) => (
                     <button
                       key={i}
@@ -257,102 +381,6 @@ export default function MapsPage() {
               </div>
             )}
             {V.locationError && <div className="max-w-[220px] rounded-xl border border-[rgba(240,138,138,.4)] bg-[rgba(240,138,138,.1)] px-3 py-1.5 text-[11px] font-semibold text-[#f08a8a]">{V.locationError}</div>}
-
-            {/* Road/rail overlays from OpenStreetMap. Each button carries its
-                own layer's colour as a swatch, since over satellite imagery
-                the colour is the only thing telling the three lines apart. */}
-            <div className={`flex ${PANEL_W} flex-col gap-1.5 rounded-2xl border border-[rgba(255,255,255,.16)] bg-[rgba(20,20,20,.78)] p-2 shadow-[0_4px_14px_rgba(0,0,0,.35)] backdrop-blur-[8px]`}>
-              {V.osmLayerOpts.map((o: any) => (
-                <button
-                  key={o.key}
-                  onClick={o.toggle}
-                  disabled={o.loading}
-                  className="flex cursor-pointer items-center gap-2 whitespace-nowrap rounded-full border px-3 py-1.5 font-[inherit] text-[11.5px] font-bold transition-all duration-200 disabled:cursor-wait"
-                  style={{
-                    borderColor: o.active ? o.color : 'rgba(255,255,255,.18)',
-                    background: o.active ? 'rgba(255,255,255,.06)' : 'transparent',
-                    color: o.active ? o.color : 'rgba(242,237,227,.7)',
-                  }}
-                >
-                  <span className="h-[3px] w-3.5 flex-none rounded-full" style={{ background: o.active ? o.color : 'rgba(242,237,227,.35)' }} />
-                  {o.label}{o.loading ? '…' : ''}
-                </button>
-              ))}
-              {/* ODbL requires attribution wherever the data is drawn, so it
-                  appears with the layers rather than buried in a footer. Linked
-                  rather than plain text — OSM's attribution guidance asks for a
-                  route back to the licence, not just the credit line. */}
-              {V.osmAnyOn && (
-                <a
-                  href="https://www.openstreetmap.org/copyright"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-1 text-[9.5px] leading-tight text-[rgba(242,237,227,.35)] no-underline hover:text-[rgba(242,237,227,.6)]"
-                >© OpenStreetMap contributors</a>
-              )}
-            </div>
-
-            {/* Traveller hazard zones. One at a time by design — six
-                translucent fills stacked on each other turn into a single
-                brown wash that answers no question at all. */}
-            {/* Narrow enough to stop crowding the map, but not past the point
-                where the longest label ("Тарвага — тахлын эрсдэл") would wrap
-                — the pills are whitespace-nowrap, so going tighter overflows
-                rather than reflows. */}
-            <div className={`flex ${PANEL_W} flex-col gap-1.5 rounded-2xl border border-[rgba(255,255,255,.16)] bg-[rgba(20,20,20,.78)] p-2 shadow-[0_4px_14px_rgba(0,0,0,.35)] backdrop-blur-[8px]`}>
-              <div className="flex items-center gap-1.5 px-1 text-[10px] font-bold uppercase tracking-[.08em] text-[rgba(242,237,227,.4)]">
-                <AlertTriangle size={11} />Аюултай амьтдын бүс
-              </div>
-              {V.dangerOpts.map((z: any) => (
-                // The advice sits directly under the hazard it belongs to,
-                // not in a box at the foot of the list — down there it read as
-                // a note about the whole panel, and with six buttons between
-                // the press and the text it was easy to miss that anything
-                // had appeared at all.
-                <Fragment key={z.key}>
-                  <button
-                    onClick={z.pick}
-                    className="flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1.5 text-left font-[inherit] text-[11.5px] font-bold transition-all duration-200"
-                    style={{
-                      borderColor: z.active ? z.color : 'rgba(255,255,255,.18)',
-                      background: z.active ? 'rgba(255,255,255,.06)' : 'transparent',
-                      color: z.active ? z.color : 'rgba(242,237,227,.7)',
-                    }}
-                  >
-                    <span className="h-2 w-2 flex-none rounded-full" style={{ background: z.active ? z.color : 'rgba(242,237,227,.3)' }} />
-                    {z.label}
-                  </button>
-                  {z.active && (
-                    // Left border in the hazard's own colour, tying the text
-                    // to the button above it rather than leaving it floating
-                    // as another item in the same stack.
-                    <div
-                      className="mb-0.5 ml-3 flex flex-col gap-1 rounded-r-lg bg-[rgba(255,255,255,.04)] py-1.5 pl-2.5 pr-2"
-                      style={{ borderLeft: `2px solid ${z.color}` }}
-                    >
-                      {z.season && <div className="text-[10px] font-bold" style={{ color: z.color }}>{z.season}</div>}
-                      <div className="text-[11px] leading-[1.5] text-[rgba(242,237,227,.7)]">{z.advice}</div>
-                    </div>
-                  )}
-                </Fragment>
-              ))}
-              <div className="px-1 text-[9.5px] leading-tight text-[rgba(242,237,227,.35)]">Ойролцоох чиглүүлэг. Албан ёсны эх сурвалж биш.</div>
-            </div>
-          </div>
-        )}
-
-        {!V.isMobile && (
-          <div className="absolute right-4 top-4 z-20 flex items-center gap-2.5">
-            {V.mapZoomed && (
-              <button onClick={V.resetMap} className="cursor-pointer whitespace-nowrap rounded-full border border-[rgba(242,237,227,.3)] bg-[rgba(20,20,20,.72)] px-3.5 py-1.5 font-[inherit] text-xs font-bold text-[rgba(242,237,227,.85)] shadow-[0_4px_14px_rgba(0,0,0,.35)] backdrop-blur-[8px] transition-all duration-250 hover:border-[var(--accent,#E8B84B)] hover:text-[var(--accent,#E8B84B)]">← {V.L.resetMap}</button>
-            )}
-            <button onClick={V.openGlobe} title={V.L.globe} className="flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full border-none text-[#132a1f] shadow-[0_4px_14px_rgba(0,0,0,.35)] transition-transform duration-200 hover:-translate-y-0.5" style={{ background: V.accent }}><Globe size={15} /></button>
-            <div className="relative inline-grid grid-cols-3 rounded-full border border-[rgba(255,255,255,.16)] bg-[rgba(20,20,20,.72)] p-[3px] shadow-[0_4px_14px_rgba(0,0,0,.35)] backdrop-blur-[8px]">
-              <div className="absolute top-[3px] bottom-[3px] left-[3px] w-[calc((100%-6px)/3)] rounded-full transition-transform duration-300 ease-[cubic-bezier(.34,1.4,.5,1)]" style={{ background: V.accent, transform: `translateX(${V.pinPillShift})` }}></div>
-              {V.pinModeOpts.map((m: any, i: number) => (
-                <button key={i} onClick={m.pick} className="relative z-[2] cursor-pointer whitespace-nowrap border-none bg-transparent px-3.5 py-[5px] font-[inherit] text-[11.5px] font-bold transition-colors duration-250" style={{ color: m.color }}>{m.label}</button>
-              ))}
-            </div>
           </div>
         )}
 
