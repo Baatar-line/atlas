@@ -909,6 +909,11 @@ export const imgUrl = (img: string, w: number) => {
   const cld = img.match(CLOUDINARY_UPLOAD);
   if (cld) return cld[1] + 'f_auto,q_auto,w_' + w + ',c_limit/' + cld[2];
   if (/^https?:\/\//.test(img)) return img;
+  // Assets we ship ourselves under public/ (e.g. the brand logos in
+  // public/brands) — a root-relative path is already a working URL, and
+  // there's nothing to resize. Without this they'd fall through to U() and
+  // come back as the generic placeholder like an Unsplash id does.
+  if (img.startsWith('/')) return img;
   return U(img, w);
 };
 

@@ -87,7 +87,13 @@ a:hover {
    set, and without correcting for it the row would jump by half a gap on
    every cycle. Change the gap and this has to change with it. */
 .bb-marquee {
-  overflow: hidden;
+  /* Only the horizontal axis needs hiding — that's what hides the duplicate
+     set sliding past the edge. `overflow: hidden` (the shorthand) sets both
+     axes at once, which silently clipped anything that overflowed
+     vertically too — the reduced-motion override below already only touches
+     overflow-x, which is what the intent always was. */
+  overflow-x: hidden;
+  overflow-y: visible;
 }
 .bb-marquee-track {
   width: max-content;
