@@ -676,14 +676,16 @@ export function sitesFor(gc: any, lang: string, databaseSites?: CountrySiteRow[]
 // instead of the generic lucide `icon`. None are wired up yet since we don't have
 // rights to any official app logos bundled in the repo; drop a URL in here (or an
 // uploaded asset path) per app once one is sourced.
-export interface TravelApp { slug: string; icon: LucideIcon; name: string; mn: string; en: string; tint: string; ring: string; url: string; logo?: string; }
+// No per-app tint/ring colour pair anymore — the suggest page draws every one
+// of these chips in the same neutral white (see the travel-apps grid there).
+export interface TravelApp { slug: string; icon: LucideIcon; name: string; mn: string; en: string; url: string; logo?: string; }
 export const TRAVEL_APPS: TravelApp[] = [
-  { slug: 'organic-maps', icon: Map, name: 'Organic Maps', mn: 'Offline газрын зураг & навигаци', en: 'Offline maps & navigation', tint: 'rgba(66,133,244,.22)', ring: 'rgba(120,170,255,.5)', url: 'https://organicmaps.app/' },
-  { slug: 'osmand', icon: Compass, name: 'OsmAnd', mn: 'Offline маршрут & GPS', en: 'Offline routes & GPS', tint: 'rgba(52,168,83,.22)', ring: 'rgba(120,220,150,.5)', url: 'https://osmand.net/' },
-  { slug: 'windy', icon: Wind, name: 'Windy', mn: 'Салхи & цаг агаарын урьдчилсан мэдээ', en: 'Wind & weather forecast', tint: 'rgba(120,200,220,.22)', ring: 'rgba(150,220,240,.5)', url: 'https://www.windy.com/-Temperature-temp?temp,39.270,87.989,3' },
-  { slug: 'ventusky', icon: CloudRain, name: 'Ventusky', mn: 'Хур тунадас & температурын зураг', en: 'Rainfall & temperature maps', tint: 'rgba(180,120,220,.22)', ring: 'rgba(200,150,240,.5)', url: 'https://www.ventusky.com/#p=31;89;2' },
-  { slug: 'avis-mongolia', icon: Car, name: 'Avis Mongolia', mn: 'Машин түрээслэх', en: 'Rent a car', tint: 'rgba(224,122,95,.22)', ring: 'rgba(240,150,120,.5)', url: 'https://avis-mongolia.com/car-rental?ssid=nVfrblZ014TB' },
-  { slug: 'drive-mongolia', icon: Route, name: 'Drive Mongolia', mn: 'Өөрөө жолоодох & хөтөчтэй аялал', en: 'Self-drive & guided tours', tint: 'rgba(232,183,125,.24)', ring: 'rgba(232,183,125,.6)', url: 'https://www.drivemongolia.com/?utm_source=chatgpt.com' },
+  { slug: 'organic-maps', icon: Map, name: 'Organic Maps', mn: 'Offline газрын зураг & навигаци', en: 'Offline maps & navigation', url: 'https://organicmaps.app/' },
+  { slug: 'osmand', icon: Compass, name: 'OsmAnd', mn: 'Offline маршрут & GPS', en: 'Offline routes & GPS', url: 'https://osmand.net/' },
+  { slug: 'windy', icon: Wind, name: 'Windy', mn: 'Салхи & цаг агаарын урьдчилсан мэдээ', en: 'Wind & weather forecast', url: 'https://www.windy.com/-Temperature-temp?temp,39.270,87.989,3' },
+  { slug: 'ventusky', icon: CloudRain, name: 'Ventusky', mn: 'Хур тунадас & температурын зураг', en: 'Rainfall & temperature maps', url: 'https://www.ventusky.com/#p=31;89;2' },
+  { slug: 'avis-mongolia', icon: Car, name: 'Avis Mongolia', mn: 'Машин түрээслэх', en: 'Rent a car', url: 'https://avis-mongolia.com/car-rental?ssid=nVfrblZ014TB' },
+  { slug: 'drive-mongolia', icon: Route, name: 'Drive Mongolia', mn: 'Өөрөө жолоодох & хөтөчтэй аялал', en: 'Self-drive & guided tours', url: 'https://www.drivemongolia.com/?utm_source=chatgpt.com' },
 ];
 
 export interface CatItem { name: string; meta: string; sub: string; aimag?: string; hours?: string; phone?: string; desc?: string; access?: boolean; img?: string; images?: string[]; id?: number; lat?: number; lng?: number; mapUrl?: string; }

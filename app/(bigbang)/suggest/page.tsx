@@ -32,84 +32,125 @@ export default function SuggestPage() {
       className="box-border min-h-screen"
       style={{ padding: V.isMobile ? '96px 18px 14px' : '110px 48px 18px' }}
     >
-      {V.brands.length > 0 && (
-        <div className="mb-10">
-          <h2 className="m-0 text-lg font-extrabold tracking-[-0.02em] text-cream">{V.L.brandsTitle}</h2>
-          <p className="mt-1.5 mb-3.5 text-[13px] text-[rgba(242,237,227,.55)]">{V.L.brandsSub}</p>
-          {/* Drifts on its own instead of waiting to be scrolled — a partner
-              rail nobody scrolls shows the same three logos forever. The list
-              is rendered twice so the loop has no seam (see .bb-marquee in
-              globals.css); the duplicate is aria-hidden so screen readers and
-              tab order still see each brand once.
+      {/* Fills the first screen after the section's own top/bottom padding,
+          so the brand row and the top-rated row form a clean first fold —
+          closing this off at a hard height (rather than just letting the two
+          blocks take their natural, smaller height) is what stops the next
+          section (the big collection banners) from peeking a sliver of
+          itself in at the very bottom of the initial view. The two rows
+          themselves are unchanged size; the leftover space (more on a tall
+          monitor, ~0 on a short laptop) just becomes blank space below them
+          within this box.
 
-              Speed is per-card rather than fixed, so adding brands makes the
-              rail longer instead of faster — a fixed duration would speed
-              every card up as the list grows. */}
-          <div className="bb-marquee bb-hscroll pt-3 pb-1.5">
-            <div
-              className="bb-marquee-track flex gap-4"
-              style={{ animationDuration: `${Math.max(V.brands.length * 9, 30)}s` }}
-            >
-            {[...V.brands, ...V.brands].map((b: any, i: number) => {
-              const isClone = i >= V.brands.length;
-              // The sizing/flex-item classes live on whichever element ends
-              // up as the actual direct child of the scroll rail (<a> when
-              // there's a link, <div> otherwise) — putting them one level
-              // deeper instead left the wrapper with no size of its own.
-              // basis/aspect deliberately match the "Хамгийн өндөр үнэлгээтэй"
-              // rail below: the two sit one above the other on this page, and
-              // at 190px/3-4 the brand rail read as a lesser, half-finished
-              // version of it rather than a section of its own.
-              const cardClass = `relative block grow-0 shrink-0 basis-[220px] aspect-[4/5] cursor-pointer overflow-hidden rounded-2xl border border-[rgba(255,255,255,.1)] no-underline transition-transform duration-300 ease-[cubic-bezier(.22,.8,.3,1)] hover:-translate-y-2${isClone ? ' bb-marquee-clone' : ''}`;
-              const inner = (
-                <>
-                  <BgMedia bg={b.thumb} className="absolute inset-0" imgClassName="bg-cover bg-center" />
-                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,.05)_0%,rgba(0,0,0,0)_45%,rgba(0,0,0,.85)_100%)]"></div>
-                  <div className="absolute left-3 right-3 bottom-3 flex items-center gap-2.5">
-                    <div className="flex h-9 w-9 flex-none items-center justify-center overflow-hidden rounded-full border border-[rgba(255,255,255,.25)] bg-[#f2ede3]">
-                      {b.logoUrl ? <img src={b.logoUrl} alt="" className="h-full w-full object-cover" /> : <span className="text-xs font-extrabold text-[#171410]">{b.name.charAt(0)}</span>}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="truncate text-[13.5px] font-extrabold leading-[1.2] text-cream-2">{b.name}</div>
-                      <div className="truncate text-[11px] text-[rgba(242,237,227,.6)]">{b.category}</div>
-                    </div>
-                  </div>
-                </>
-              );
-              return b.link && !isClone ? (
-                <a key={i} href={b.link} target="_blank" rel="noopener noreferrer" className={cardClass}>{inner}</a>
-              ) : (
-                <div key={i} className={cardClass} aria-hidden={isClone || undefined}>{inner}</div>
-              );
-            })}
-            </div>
-          </div>
-        </div>
-      )}
+          The subtracted amount is padding(128/110) plus a safety margin — a
+          first attempt at 56px still left a sliver of the next section
+          peeking in, so this is a more generous 136px. Windows' own taskbar
+          and the browser's vertical scrollbar both shave real, variable
+          amounts off `100vh` that CSS has no way to know about; the margin
+          trades a bit more blank space on a tall monitor for actually
+          guaranteeing no peek rather than chasing the exact number. */}
+      <div style={{ minHeight: V.isMobile ? 'calc(100vh - 246px)' : 'calc(100vh - 264px)' }}>
+        {V.brands.length > 0 && (
+          // mb-6 rather than the old mb-10 — this section and the one below it
+          // are each a title plus a card row, so the two together used to run
+          // past a typical laptop's viewport height before either row's second
+          // line of text came into view. Tightening the gap between them buys
+          // back real space without touching the cards themselves.
+          <div className="mb-6">
+            <h2 className="m-0 mb-2 text-lg font-extrabold tracking-[-0.02em] text-cream">{V.L.brandsTitle}</h2>
+            {/* Drifts on its own instead of waiting to be scrolled — a partner
+                rail nobody scrolls shows the same three logos forever. The list
+                is rendered twice so the loop has no seam (see .bb-marquee in
+                globals.css); the duplicate is aria-hidden so screen readers and
+                tab order still see each brand once.
 
-      <div className="mb-10">
-        <h2 className="m-0 mb-3.5 text-lg font-extrabold tracking-[-0.02em] text-cream">{V.L.topRowTitle}</h2>
-        {/* overflow-x:auto here forces overflow-y to compute as 'auto' too (CSS
-            spec — you can't leave one axis 'visible' once the other isn't),
-            so a card's hover lift (translateY(-8px) below) got clipped by the
-            row's own top edge with zero padding-top to absorb it. */}
-        <div className="bb-hscroll flex gap-4 overflow-x-auto pt-3 pb-1.5">
-          {V.topItems.filter(Boolean).map((it: any, i: number) => (
-            <div
-              key={i}
-              onClick={it.onClick}
-              className="relative grow-0 shrink-0 basis-[220px] aspect-[4/5] cursor-pointer overflow-hidden rounded-2xl border border-[rgba(255,255,255,.1)] transition-transform duration-300 ease-[cubic-bezier(.22,.8,.3,1)] hover:-translate-y-2"
-            >
-              <BgMedia bg={it.thumb} className="absolute inset-0" imgClassName="bg-cover bg-center" />
-              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,.1)_0%,rgba(0,0,0,0)_40%,rgba(0,0,0,.92)_100%)]"></div>
-              <span className="absolute top-[10px] left-[10px] rounded-full border border-[rgba(255,255,255,.2)] bg-[rgba(0,0,0,.55)] px-[10px] py-1 text-[10px] font-bold tracking-[.05em] text-[var(--accent,#E8B84B)] uppercase backdrop-blur-[8px]">{it.kind}</span>
-              <span className="absolute top-[10px] right-[10px] rounded-full border border-[rgba(255,255,255,.2)] bg-[rgba(0,0,0,.55)] px-[9px] py-[3px] text-[11px] font-bold text-cream-2 backdrop-blur-[8px]">★ {it.rating}</span>
-              <div className="absolute right-3 bottom-3 left-3">
-                <div className="text-sm font-extrabold leading-[1.25] text-cream-2">{it.name}</div>
-                <div className="mt-0.5 text-[11.5px] text-[rgba(242,237,227,.65)]">{it.sub}</div>
+                Speed is per-card rather than fixed, so adding brands makes the
+                rail longer instead of faster — a fixed duration would speed
+                every card up as the list grows. */}
+            <div className="bb-marquee bb-hscroll pt-3 pb-1.5">
+              <div
+                className="bb-marquee-track flex gap-4"
+                style={{ animationDuration: `${Math.max(V.brands.length * 9, 30)}s` }}
+              >
+              {[...V.brands, ...V.brands].map((b: any, i: number) => {
+                const isClone = i >= V.brands.length;
+                // The sizing/flex-item classes live on whichever element ends
+                // up as the actual direct child of the scroll rail (<a> when
+                // there's a link, <div> otherwise) — putting them one level
+                // deeper instead left the wrapper with no size of its own.
+                // Portrait (3/4) on purpose, unlike the landscape "Хамгийн
+                // өндөр үнэлгээтэй" rail below: the differing shape is what
+                // tells the two stacked rails apart at a glance, and a brand
+                // logo plus two short lines needs height more than width.
+                // 200px wide (267 tall) keeps this row and the landscape row
+                // below within ~70px of each other in height, so the pair
+                // still reads as one fold rather than one rail towering over
+                // the other.
+                const cardClass = `relative block grow-0 shrink-0 basis-[200px] aspect-[3/4] cursor-pointer overflow-hidden rounded-2xl border border-[rgba(255,255,255,.1)] no-underline transition-transform duration-300 ease-[cubic-bezier(.22,.8,.3,1)] hover:-translate-y-2${isClone ? ' bb-marquee-clone' : ''}`;
+                const inner = (
+                  <>
+                    <BgMedia bg={b.thumb} className="absolute inset-0" imgClassName="bg-cover bg-center" />
+                    {/* The transparent stop sits higher than on a landscape
+                        card — same scrim depth in pixels under a taller
+                        card, so the caption keeps its contrast without the
+                        dark half creeping up over the photo. */}
+                    <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,.05)_0%,rgba(0,0,0,0)_38%,rgba(0,0,0,.85)_100%)]"></div>
+                    {/* Logo on the same line as the caption, ahead of it. It
+                        costs the name ~46px of an already narrow card, so
+                        both lines truncate rather than wrap — a wrapped name
+                        would push the caption off the card's bottom edge. */}
+                    <div className="absolute left-3.5 right-3.5 bottom-3.5 flex items-center gap-2.5">
+                      <div className="flex h-9 w-9 flex-none items-center justify-center overflow-hidden rounded-full border border-[rgba(255,255,255,.25)] bg-[#f2ede3]">
+                        {b.logoUrl ? <img src={b.logoUrl} alt="" className="h-full w-full object-cover" /> : <span className="text-[13px] font-extrabold text-[#171410]">{b.name.charAt(0)}</span>}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="truncate text-[14px] font-extrabold leading-[1.2] text-cream-2">{b.name}</div>
+                        <div className="truncate text-[11.5px] text-[rgba(242,237,227,.6)]">{b.category}</div>
+                      </div>
+                    </div>
+                  </>
+                );
+                return b.link && !isClone ? (
+                  <a key={i} href={b.link} target="_blank" rel="noopener noreferrer" className={cardClass}>{inner}</a>
+                ) : (
+                  <div key={i} className={cardClass} aria-hidden={isClone || undefined}>{inner}</div>
+                );
+              })}
               </div>
             </div>
-          ))}
+          </div>
+        )}
+
+        <div className="mb-10">
+          <h2 className="m-0 mb-3.5 text-lg font-extrabold tracking-[-0.02em] text-cream">{V.L.topRowTitle}</h2>
+          {/* overflow-x:auto here forces overflow-y to compute as 'auto' too (CSS
+              spec — you can't leave one axis 'visible' once the other isn't),
+              so a card's hover lift (translateY(-8px) below) got clipped by the
+              row's own top edge with zero padding-top to absorb it. */}
+          <div className="bb-hscroll flex gap-4 overflow-x-auto pt-3 pb-1.5">
+            {V.topItems.filter(Boolean).map((it: any, i: number) => (
+              // 340px wide (227 tall), up from 190: at 190 the two top corner
+              // pills (category and ★rating) met in the middle, so the
+              // longest category label ("ҮЗЭСГЭЛЭНТ ГАЗРУУД") ran under the
+              // rating and got clipped. The extra width leaves room for both
+              // and gives the photo — the actual draw of this rail — a size
+              // worth looking at.
+              <div
+                key={i}
+                onClick={it.onClick}
+                className="relative grow-0 shrink-0 basis-[340px] aspect-[3/2] cursor-pointer overflow-hidden rounded-2xl border border-[rgba(255,255,255,.1)] transition-transform duration-300 ease-[cubic-bezier(.22,.8,.3,1)] hover:-translate-y-2"
+              >
+                <BgMedia bg={it.thumb} className="absolute inset-0" imgClassName="bg-cover bg-center" />
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,.1)_0%,rgba(0,0,0,0)_40%,rgba(0,0,0,.92)_100%)]"></div>
+                <span className="absolute top-3 left-3 rounded-full border border-[rgba(255,255,255,.2)] bg-[rgba(0,0,0,.55)] px-[11px] py-1 text-[10.5px] font-bold tracking-[.05em] text-[var(--accent,#E8B84B)] uppercase backdrop-blur-[8px]">{it.kind}</span>
+                <span className="absolute top-3 right-3 rounded-full border border-[rgba(255,255,255,.2)] bg-[rgba(0,0,0,.55)] px-[10px] py-[3.5px] text-[11.5px] font-bold text-cream-2 backdrop-blur-[8px]">★ {it.rating}</span>
+                <div className="absolute right-3.5 bottom-3.5 left-3.5">
+                  <div className="truncate text-[16.5px] font-extrabold leading-[1.25] text-cream-2">{it.name}</div>
+                  <div className="truncate mt-1 text-[12.5px] text-[rgba(242,237,227,.65)]">{it.sub}</div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -119,7 +160,7 @@ export default function SuggestPage() {
             key={i}
             onClick={s.open}
             className="relative cursor-pointer overflow-hidden rounded-[22px] transition-transform duration-300 ease-in-out hover:-translate-y-[3px]"
-            style={{ height: V.isMobile ? '360px' : '420px' }}
+            style={{ height: V.isMobile ? '390px' : '470px' }}
           >
             <BgMedia bg={s.cover} isVideo={s.coverIsVideo} videoSrc={s.coverRawUrl} className="absolute inset-0" imgClassName="bg-cover bg-center" />
             <div style={{ position: 'absolute', inset: 0, background: s.scrim }}></div>
@@ -175,9 +216,19 @@ export default function SuggestPage() {
                 )}
                 <span className="absolute top-[18px] right-[18px] z-[1] flex h-[26px] w-[26px] flex-none items-center justify-center rounded-full border border-[rgba(255,255,255,.22)] bg-[rgba(0,0,0,.22)] text-[13px] text-cream-2 opacity-75 transition-[opacity,transform] duration-[250ms]">↗</span>
                 <div className="relative flex items-center gap-3">
-                  <div className="box-border flex h-[38px] w-[38px] flex-none items-center justify-center rounded-xl p-[3px]" style={{ border: `1px solid ${a.ring}` }}>
-                    <div className="flex h-full w-full items-center justify-center rounded-[8px] shadow-[inset_0_1px_0_rgba(255,255,255,.2)]" style={{ background: a.tint }}>
-                      {a.logo ? <img src={a.logo} alt={a.name} style={{ width: '58%', height: '58%', objectFit: 'contain' }} /> : <a.icon size={16} />}
+                  {/* One neutral white treatment for all six, not a per-app
+                      brand colour (the tint/ring pair these used to carry):
+                      six differently-coloured chips on top of six photo
+                      backgrounds read as noise, and the colours weren't the
+                      apps' real brand colours anyway. The lucide glyph draws
+                      in currentColor, so the text colour here is what makes
+                      it white. */}
+                  <div className="box-border flex h-[38px] w-[38px] flex-none items-center justify-center rounded-xl border border-[rgba(255,255,255,.22)] p-[3px]">
+                    <div className="flex h-full w-full items-center justify-center rounded-[8px] bg-[rgba(255,255,255,.1)] text-cream-2 shadow-[inset_0_1px_0_rgba(255,255,255,.2)]">
+                      {/* A real logo file would arrive in its own brand
+                          colours, so it's knocked out to flat white to match
+                          the glyphs beside it. */}
+                      {a.logo ? <img src={a.logo} alt={a.name} style={{ width: '58%', height: '58%', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} /> : <a.icon size={16} />}
                     </div>
                   </div>
                   <div className="relative min-w-0">
