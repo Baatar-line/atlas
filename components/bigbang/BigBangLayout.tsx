@@ -198,26 +198,33 @@ export default class BigBangLayout extends React.Component<Props, any> {
     // aimag's worth.
     myLocation: null as { lat: number; lng: number } | null,
     locating: false, locationError: '', nearRadiusKm: 5, nearMeActive: false,
-    // Seeded from the last successful /settings fetch (see fetchSettings below) so a
-    // refresh shows the real saved photo immediately instead of flashing the built-in
-    // placeholder while the network round-trip to fetch it is still in flight.
-    aboutBgOverride: cachedBg('bb_about_bg'), homeBgOverride: cachedBg('bb_home_bg'),
-    mongoliaFlagOverride: cachedBg('bb_mn_flag'),
+    // Real values are read from localStorage in componentDidMount, not here —
+    // localStorage doesn't exist during SSR, so reading it in a state field
+    // initializer (which runs on both the server and the client's very first,
+    // hydration-matching render) meant the client's first render could already
+    // see a previously-cached override while the server's couldn't. React
+    // requires that first render to match the server's exactly; whenever this
+    // browser actually had a cached override, it didn't, and hydration threw
+    // "server rendered HTML didn't match the client" for whichever card the
+    // override applied to. Starting empty here and correcting it once mounted
+    // is the same fix already applied to `vw` below, for the same reason.
+    aboutBgOverride: null as string | null, homeBgOverride: null as string | null,
+    mongoliaFlagOverride: null as string | null,
     // Per-app background photo/video for each "Аяллын апп" tile on the
     // Suggest page, keyed by TRAVEL_APPS slug.
-    travelAppsBgOverride: cachedMap('bb_travelapps_bg'),
+    travelAppsBgOverride: {} as Record<string, string>,
     // Per-category (keyed by slug) and per-aimag (keyed by name) background photos
     // saved via Admin Panel → Фон зураг, so the live site shows them too.
-    catBgOverride: cachedMap('bb_cat_bg'), aimagBgOverride: cachedMap('bb_aimag_bg'),
+    catBgOverride: {} as Record<string, string>, aimagBgOverride: {} as Record<string, string>,
     // Per-category background *video*, shown only once inside that category's own
     // page (/category/:slug) — the Home screen's hover/selection preview always
     // stays a still photo (catBgOverride above), even when a video is set here.
-    catVideoOverride: cachedMap('bb_cat_video_bg'),
+    catVideoOverride: {} as Record<string, string>,
     // Per-"Санал болгох" card background photo, keyed by SUGGESTS slug.
-    suggestBgOverride: cachedMap('bb_suggest_bg'),
+    suggestBgOverride: {} as Record<string, string>,
     // Per-team-member photo shown inside their About-page badge, keyed by the
     // TEAM slug — uploaded in Admin Panel → Фон зураг → Багийн гишүүдийн зураг.
-    teamImgOverride: cachedMap('bb_team_img'),
+    teamImgOverride: {} as Record<string, string>,
     heroVertPos: null,
     // Tracked via a resize listener (see componentDidMount) since this whole
     // file styles elements with inline style objects — inline styles can't
@@ -259,7 +266,19 @@ export default class BigBangLayout extends React.Component<Props, any> {
     window.addEventListener('focus', this.fetchContentBgs);
     window.addEventListener('focus', this.fetchLiveContent);
     try {
-      this.setState({ spNeeds: localStorage.getItem('bb_sp') === '1', bigText: localStorage.getItem('bb_big') === '1' });
+      this.setState({
+        spNeeds: localStorage.getItem('bb_sp') === '1', bigText: localStorage.getItem('bb_big') === '1',
+        // Cached admin-set overrides, correcting the SSR-safe empty defaults
+        // above now that it's safe to touch localStorage — see the comment on
+        // those state fields for why they can't be read any earlier.
+        aboutBgOverride: cachedBg('bb_about_bg'), homeBgOverride: cachedBg('bb_home_bg'),
+        mongoliaFlagOverride: cachedBg('bb_mn_flag'),
+        travelAppsBgOverride: cachedMap('bb_travelapps_bg'),
+        catBgOverride: cachedMap('bb_cat_bg'), aimagBgOverride: cachedMap('bb_aimag_bg'),
+        catVideoOverride: cachedMap('bb_cat_video_bg'),
+        suggestBgOverride: cachedMap('bb_suggest_bg'),
+        teamImgOverride: cachedMap('bb_team_img'),
+      });
     } catch (err) { /* ignore */ }
     // Session is read straight from localStorage on each use (see
     // lib/session.ts), not kept in this component's own state — this just
@@ -1723,11 +1742,11 @@ export default class BigBangLayout extends React.Component<Props, any> {
     // sitting there under a flat black scrim.
     const aimagBgLoading = aimag !== 'Бүгд' && !aimagBgLayers.some((l) => l.key === aimag && l.bg);
 
-    // Admin-uploaded team portraits (slug → url), used by V.team below. Gated
-    // on _mounted for the same reason mySession is — teamImgOverride is seeded
-    // from localStorage, which the server can't read, so using it during the
-    // hydration render would put photos where the server rendered initials.
-    const teamImgs: Record<string, string> = this._mounted ? (this.state.teamImgOverride || {}) : {};
+    // Admin-uploaded team portraits (slug → url), used by V.team below.
+    // teamImgOverride starts empty and is only ever filled in from
+    // componentDidMount (see its state field), so it's already the same on
+    // the server and the client's first render — no _mounted gate needed.
+    const teamImgs: Record<string, string> = this.state.teamImgOverride || {};
 
     // "Миний нэмсэн..." on the Profile page — this session's own submissions.
     // Places come pre-filtered from the server (GET /places/mine, see
@@ -1843,10 +1862,7 @@ export default class BigBangLayout extends React.Component<Props, any> {
       aboutNavColor: route === 'about' ? accent : 'rgba(242,237,227,.75)',
       // `img` is the admin-uploaded portrait for that member (Admin Panel → Фон
       // зураг → Багийн гишүүдийн зураг), keyed by the TEAM slug — empty for
-      // anyone without one, which keeps their coloured initial circle. Gated on
-      // _mounted for the same reason mySession is: teamImgOverride is seeded
-      // from localStorage, which the server can't see, so reading it during
-      // hydration would render photos where the server rendered letters.
+      // anyone without one, which keeps their coloured initial circle.
       // FAQ accordion at the bottom of the Profile page — question/answer in
       // whichever language is active (see FAQ in data.ts).
       faq: FAQ.map((f) => ({ q: lang === 'en' ? f[2] : f[0], a: lang === 'en' ? f[3] : f[1] })),
