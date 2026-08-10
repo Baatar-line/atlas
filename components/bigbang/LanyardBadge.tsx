@@ -68,7 +68,7 @@ export default function LanyardBadge({ letter = 'b', large = false, name, role, 
     const cardHeight = large ? 168 : 37;
     // Large (About-page) cards hang from a noticeably longer cord than the
     // tiny nav badge — same segment count, just stretched rest-length.
-    const segLen = large ? SEG_LEN * 2.2 : SEG_LEN;
+    const segLen = large ? SEG_LEN * 1.6 : SEG_LEN;
     // Nudge halo wraps the whole card body, not just its pivot point at the
     // top — with a fixed small radius the ~170px-tall About-page cards only
     // reacted when the cursor passed within a few px of their very top edge,

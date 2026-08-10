@@ -935,7 +935,13 @@ export function xyToLonLat(x: number, y: number): [number, number] {
   const myInv = (v: number) => (Math.atan(Math.exp(v)) - Math.PI / 4) * (360 / Math.PI);
   const top = my(52.16), bot = my(41.56);
   const lng = 87.73 + (x / 1000) * (119.93 - 87.73);
-  const lat = myInv(top - (y / 483) * (top - bot));
+  // The legacy SVG was fitted a little north of the real ADM1 geometry.
+  // Comparing its province bounds with the geoBoundaries/OSM ADM1 dataset
+  // shows a mean +0.117° latitude drift (longitude is effectively aligned).
+  // Correct only the Leaflet overlay conversion: the original SVG coordinate
+  // space used elsewhere in the UI remains untouched, while borders, labels
+  // and generated in-aimag pins all move together on the satellite basemap.
+  const lat = myInv(top - (y / 483) * (top - bot)) - 0.1;
   return [lat, lng];
 }
 

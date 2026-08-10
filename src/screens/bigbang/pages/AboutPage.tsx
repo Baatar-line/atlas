@@ -4,13 +4,12 @@ import { useOutletContext } from 'react-router-dom';
 import { css } from '../ui';
 import LanyardBadge from '../LanyardBadge';
 
-// Groups a space-separated vertical-script string 2 words per column (line),
+// Groups a space-separated vertical-script string 1 word per column (line),
 // joined with a real `\n` — paired with `whiteSpace: 'pre'` on the element so
 // the browser breaks exactly where told instead of auto-wrapping (which
 // doesn't reliably clip for vertical Mongolian script and used to run the
-// text past its row). One word per column read as too many/too narrow
-// columns strung across the screen — two keeps the column count down.
-function mnVertLines(s: string, perLine = 2): string {
+// text past its row).
+function mnVertLines(s: string, perLine = 1): string {
   const words = s.split(' ');
   const lines: string[] = [];
   for (let i = 0; i < words.length; i += perLine) lines.push(words.slice(i, i + perLine).join(' '));
@@ -53,7 +52,7 @@ export default function AboutPage() {
                     <div style={css('min-height:40px;display:flex;align-items:center')}>
                       <div style={css('font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--accent,#E8B84B)')}>{row.label}</div>
                     </div>
-                    <div style={css('font-size:14px;line-height:1.65;color:#f2ede3;max-width:380px;margin-top:6px')}>{row.desc}</div>
+                    <div style={css('font-size:14px;line-height:1.65;color:#f2ede3;max-width:520px;margin-top:6px')}>{row.desc}</div>
                   </div>
                   {/* One word per column (same manual-\n approach the short
                       `vert` title already used successfully) instead of letting
@@ -78,10 +77,6 @@ export default function AboutPage() {
         </div>
 
         <div style={css('position:relative;z-index:2;max-width:1100px;margin:0 auto;padding:0 28px 48px')}>
-          <div style={css('display:flex;align-items:baseline;gap:12px;margin-bottom:20px')}>
-            <h2 style={css('margin:0;font-size:20px;font-weight:800;letter-spacing:-0.02em;color:#f6f1e7')}>{V.L.abTeamT}</h2>
-            <span style={css('font-family:ui-monospace,Menlo,monospace;font-size:11px;color:rgba(242,237,227,.5)')}>06</span>
-          </div>
           {/* Same hanging-cord badges as the nav logo — real name/role on a
               bigger card (LanyardBadge's `large` variant), swinging on the
               same verlet-rope physics, draggable/knockable the same way.

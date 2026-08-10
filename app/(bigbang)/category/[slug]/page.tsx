@@ -99,7 +99,7 @@ export default function CategoryPage() {
         </button>
         {chips.slice(1).map(renderChip)}
       </div>
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(270px,1fr))] gap-[22px]" style={{ padding: V.isMobile ? '20px 20px 32px' : '26px 48px 40px' }}>
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(270px,1fr))] min-[1800px]:grid-cols-[repeat(auto-fill,minmax(360px,1fr))] gap-[22px] min-[1800px]:gap-7" style={{ padding: V.isMobile ? '20px 20px 32px' : '26px 48px 40px' }}>
         {gridItems.map((it: any, i: number) => (
           <div key={i} onClick={it.openPlace} className="relative aspect-[677/525] cursor-pointer overflow-hidden rounded-[18px] border border-[rgba(0,0,0,.6)] transition-all duration-[350ms] ease-[cubic-bezier(.22,.8,.3,1)] animate-[bbFadeUp_.5s_cubic-bezier(.22,.8,.3,1)_both] hover:-translate-y-[5px] hover:shadow-[0_22px_48px_rgba(0,0,0,.5)]">
             <BgMedia bg={it.thumb} className="absolute inset-0" imgClassName="bg-cover bg-center transition-transform duration-[600ms] ease-[cubic-bezier(.22,.8,.3,1)]" />

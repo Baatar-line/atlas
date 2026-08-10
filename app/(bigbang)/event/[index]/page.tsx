@@ -47,9 +47,9 @@ export default function EventDetail() {
   return (
     <section data-screen-label="Эвентийн дэлгэрэнгүй" className="box-border min-h-screen" style={{ padding: V.isMobile ? '88px 18px 40px' : '96px 48px 60px' }}>
       <button onClick={() => router.push('/event')} className="mb-[26px] inline-flex cursor-pointer items-center gap-2 border-0 bg-transparent text-[13px] font-semibold text-[rgba(242,237,227,.6)] transition-colors duration-[250ms] hover:text-[var(--accent,#E8B84B)]">{L.back}</button>
-      <div className={V.isTablet ? 'flex flex-col gap-7' : 'grid grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] items-start gap-12'}>
+      <div className={V.isTablet ? 'flex flex-col gap-7' : 'grid grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] min-[1800px]:grid-cols-[minmax(0,1.15fr)_minmax(0,.85fr)] items-start gap-12 min-[1800px]:gap-16'}>
         <div className="flex flex-col gap-2.5">
-          <div className="relative aspect-[4/3] max-h-[420px] overflow-hidden rounded-[22px] border border-[rgba(255,255,255,.1)]">
+          <div className="relative aspect-[4/3] max-h-[420px] min-[1800px]:max-h-[560px] overflow-hidden rounded-[22px] border border-[rgba(255,255,255,.1)]">
             <BgMedia bg={mainBg} className="absolute inset-0" imgClassName="bg-cover bg-center" />
             <div className="absolute left-[18px] top-[18px] flex min-w-[58px] h-[58px] flex-col items-center justify-center rounded-[13px] border border-[rgba(232,184,75,.45)] bg-[rgba(0,0,0,.62)] backdrop-blur-[8px]">
               <span className="text-[20px] font-extrabold leading-none text-[var(--accent,#E8B84B)]">{ev.day}</span>

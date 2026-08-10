@@ -2,7 +2,7 @@
 
 // Big Bang — Maps (/maps): aimag pin map, add-place form, pin detail panel.
 import { Fragment, useContext, useEffect, useState } from 'react';
-import { Accessibility, AlertTriangle, Globe, Heart, LocateFixed, MapPin, Phone } from 'lucide-react';
+import { Accessibility, AlertTriangle, Globe, Heart, Layers, LocateFixed, MapPin, Phone } from 'lucide-react';
 import { BigBangContext } from '@/components/bigbang/BigBangLayout';
 import { BgMedia } from '@/components/bigbang/ui';
 import { imgUrl } from '@/components/bigbang/data';
@@ -224,6 +224,11 @@ const PANEL_W = 'w-[176px]';
 
 export default function MapsPage() {
   const V: any = useContext(BigBangContext);
+  // Both legend panels (road overlays + hazard zones) used to sit permanently
+  // open over the map, crowding it even when nobody needed them. Now they
+  // share one toggle button, sidebar-style — hidden until asked for, closed
+  // again on request rather than always taking up the corner.
+  const [legendOpen, setLegendOpen] = useState(false);
   // The rail is permanent on desktop, so the map box never changes size and
   // Leaflet needs no invalidateSize() when a pin is picked. It also means the
   // page reads as map + detail rather than map with something floating on top.
@@ -244,6 +249,19 @@ export default function MapsPage() {
 
         {!V.isMobile && (
           <div className="absolute left-4 top-4 z-20 flex flex-col items-start gap-2">
+            <button
+              onClick={() => setLegendOpen((v) => !v)}
+              title="Давхаргууд"
+              aria-expanded={legendOpen}
+              className="flex h-8 w-8 flex-none cursor-pointer items-center justify-center rounded-full border transition-all duration-200"
+              style={{
+                borderColor: legendOpen ? 'var(--accent,#E8B84B)' : 'rgba(255,255,255,.16)',
+                background: legendOpen ? 'rgba(255,255,255,.06)' : 'rgba(20,20,20,.72)',
+                color: legendOpen ? 'var(--accent,#E8B84B)' : 'rgba(242,237,227,.85)',
+              }}
+            ><Layers size={15} /></button>
+            {legendOpen && (
+            <>
             {/* Road/rail overlays from OpenStreetMap. Each button carries its
                 own layer's colour as a swatch, since over satellite imagery
                 the colour is the only thing telling the three lines apart. */}
@@ -324,6 +342,8 @@ export default function MapsPage() {
               ))}
               <div className="px-1 text-[9px] leading-tight text-[rgba(242,237,227,.35)]">Ойролцоох чиглүүлэг. Албан ёсны эх сурвалж биш.</div>
             </div>
+            </>
+            )}
           </div>
         )}
 

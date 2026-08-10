@@ -86,7 +86,7 @@ export default function SuggestPage() {
                 // below within ~70px of each other in height, so the pair
                 // still reads as one fold rather than one rail towering over
                 // the other.
-                const cardClass = `relative block grow-0 shrink-0 basis-[200px] aspect-[3/4] cursor-pointer overflow-hidden rounded-2xl border border-[rgba(255,255,255,.1)] no-underline transition-transform duration-300 ease-[cubic-bezier(.22,.8,.3,1)] hover:-translate-y-2${isClone ? ' bb-marquee-clone' : ''}`;
+                const cardClass = `relative block grow-0 shrink-0 basis-[200px] min-[1800px]:basis-[270px] aspect-[3/4] cursor-pointer overflow-hidden rounded-2xl border border-[rgba(255,255,255,.1)] no-underline transition-transform duration-300 ease-[cubic-bezier(.22,.8,.3,1)] hover:-translate-y-2${isClone ? ' bb-marquee-clone' : ''}`;
                 const inner = (
                   <>
                     <BgMedia bg={b.thumb} className="absolute inset-0" imgClassName="bg-cover bg-center" />
@@ -138,7 +138,7 @@ export default function SuggestPage() {
               <div
                 key={i}
                 onClick={it.onClick}
-                className="relative grow-0 shrink-0 basis-[340px] aspect-[3/2] cursor-pointer overflow-hidden rounded-2xl border border-[rgba(255,255,255,.1)] transition-transform duration-300 ease-[cubic-bezier(.22,.8,.3,1)] hover:-translate-y-2"
+                className="relative grow-0 shrink-0 basis-[340px] min-[1800px]:basis-[450px] aspect-[3/2] cursor-pointer overflow-hidden rounded-2xl border border-[rgba(255,255,255,.1)] transition-transform duration-300 ease-[cubic-bezier(.22,.8,.3,1)] hover:-translate-y-2"
               >
                 <BgMedia bg={it.thumb} className="absolute inset-0" imgClassName="bg-cover bg-center" />
                 <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,.1)_0%,rgba(0,0,0,0)_40%,rgba(0,0,0,.92)_100%)]"></div>

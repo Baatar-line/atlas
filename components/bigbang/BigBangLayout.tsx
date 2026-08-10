@@ -12,6 +12,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { Target, Users, Zap, Globe } from 'lucide-react';
+import polygonClipping from 'polygon-clipping';
 import CreateForm, { CreateFormData } from '../CreateForm';
 import UserAuthForm from '../UserAuthForm';
 import CompleteProfileForm, { type ProfileInfo } from '../CompleteProfileForm';
@@ -141,12 +142,26 @@ export default class BigBangLayout extends React.Component<Props, any> {
   // megabyte — the files never change between page loads.
   _osmLayer: Record<string, any> = {};
   _osmData: Record<string, any> = {};
+  // liveCats()/allPins() are pure functions of livePlaces/liveScenicPins,
+  // but got called several times per render() (directly and via mapPins(),
+  // buildPickerSvg(), syncMainMap()) — including on renders triggered by
+  // purely cosmetic hover state (heroHover/active/globeHover) that never
+  // touches these source arrays. Caching on the source array's own identity
+  // means those hover-only renders hit the cache instead of re-filtering/
+  // re-mapping the whole place/scenic list every time; a real content
+  // refetch (which always produces a new array reference) still invalidates
+  // it correctly.
+  _liveCatsCache: { src: any; result: Cat[] } | null = null;
+  _allPinsCache: { src: any; result: Pin[] } | null = null;
+  // Guards onWindowFocus below — see its own comment.
+  _lastFocusRefetch = 0;
   _mainMap: any = null;
+  _countryBorderLayer: any = null;
   _aimagPolyLayer: any = null;
   _aimagLabelLayer: any = null;
   _pinLayer: any = null;
   _aimagLayers: any = {};
-  _aimagBuilt = false;
+  _adm1FeaturesById: Record<string, any> = {};
   _fullBounds: any = null;
   _wasZoomed = false;
   _lastFlownAimag: any = null;
@@ -255,6 +270,7 @@ export default class BigBangLayout extends React.Component<Props, any> {
     // page load isn't still stuck behind a cold backend. That later call
     // re-runs this with any admin-set overrides once they're in.
     this.prefetchAimagBgs({});
+    this._lastFocusRefetch = Date.now();
     this.fetchSettings();
     this.fetchContentBgs();
     this.fetchLiveContent();
@@ -262,9 +278,7 @@ export default class BigBangLayout extends React.Component<Props, any> {
     // Admin Panel runs in a separate tab, so a tab already sitting open on this page
     // would otherwise never see a background change until manually reloaded — refetch
     // whenever this tab regains focus so it picks up the latest saved image.
-    window.addEventListener('focus', this.fetchSettings);
-    window.addEventListener('focus', this.fetchContentBgs);
-    window.addEventListener('focus', this.fetchLiveContent);
+    window.addEventListener('focus', this.onWindowFocus);
     try {
       this.setState({
         spNeeds: localStorage.getItem('bb_sp') === '1', bigText: localStorage.getItem('bb_big') === '1',
@@ -354,9 +368,7 @@ export default class BigBangLayout extends React.Component<Props, any> {
     this._mounted = false;
     this.unmountGlobe();
     this.unmountMainMap();
-    window.removeEventListener('focus', this.fetchSettings);
-    window.removeEventListener('focus', this.fetchContentBgs);
-    window.removeEventListener('focus', this.fetchLiveContent);
+    window.removeEventListener('focus', this.onWindowFocus);
     if (this._mnVertResize) window.removeEventListener('resize', this._mnVertResize);
     if (this._vwResize) window.removeEventListener('resize', this._vwResize);
     if (this._aimagBgFrozenTimer) clearTimeout(this._aimagBgFrozenTimer);
@@ -416,6 +428,22 @@ export default class BigBangLayout extends React.Component<Props, any> {
         localStorage.setItem('bb_aimag_bg', JSON.stringify(aimagBgOverride));
       } catch (err) { /* ignore */ }
     }).catch(() => {});
+  };
+
+  // Regaining window focus (alt-tabbing back, clicking into the tab — very
+  // frequent in normal use) used to unconditionally fire fetchSettings +
+  // fetchContentBgs + fetchLiveContent, 7 GETs across every content table,
+  // every single time, even seconds after the last one. Collapsing the three
+  // listeners into this one throttled handler keeps the "Admin Panel changes
+  // show up on refocus" behavior (see componentDidMount) while dropping
+  // refocus bursts that happen within a minute of the last real refetch.
+  onWindowFocus = () => {
+    const now = Date.now();
+    if (now - this._lastFocusRefetch < 60000) return;
+    this._lastFocusRefetch = now;
+    this.fetchSettings();
+    this.fetchContentBgs();
+    this.fetchLiveContent();
   };
 
   // Real content — approved places, live events, scenic pins — replacing the
@@ -503,7 +531,8 @@ export default class BigBangLayout extends React.Component<Props, any> {
   // to read CATS directly for content now reads this instead.
   liveCats(): Cat[] {
     const places: any[] = this.state.livePlaces || [];
-    return CATS.map((c) => {
+    if (this._liveCatsCache && this._liveCatsCache.src === places) return this._liveCatsCache.result;
+    const result = CATS.map((c) => {
       const items: CatItem[] = places
         .filter((p) => p.category && p.category.slug === c.slug)
         .map((p) => {
@@ -521,6 +550,8 @@ export default class BigBangLayout extends React.Component<Props, any> {
         });
       return { ...c, items, previews: items.slice(0, 3).map((it) => ({ name: it.name, meta: it.meta })) };
     });
+    this._liveCatsCache = { src: places, result };
+    return result;
   }
 
   // ── geometry ──
@@ -655,14 +686,9 @@ export default class BigBangLayout extends React.Component<Props, any> {
   }
 
   // ── real map (/maps) ──
-  // Replaces the old hand-drawn SVG outline with an actual Leaflet map on the
-  // same Google raster tiles the location-picker mini-map already used
-  // (pickMapRef, above) — so the "map" is a real, pannable/zoomable Google
-  // map instead of static art. Aimag borders and pin positions are derived
-  // from the exact same mn-aimags.json geometry the SVG used to draw, just
-  // run through xyToLonLat (the inverse of lonLatToXY) so they land on real
-  // coordinates instead of SVG pixels — nothing here is a second, separately
-  // guessed set of coordinates.
+  // Real Leaflet map with authoritative GeoJSON borders. The old SVG remains
+  // data-only for synthetic pins that have no uploaded coordinates; it is not
+  // painted and no longer owns hover, selection, labels or zoom bounds.
   mainMapRef = (node: any) => {
     if (!node) { this.unmountMainMap(); return; }
     if (this._mainMap) return;
@@ -674,6 +700,18 @@ export default class BigBangLayout extends React.Component<Props, any> {
         maxBounds: [[-90, -180], [90, 180]], maxBoundsViscosity: 1,
       });
       m.setView([46.8, 103.8], 5);
+      // Panning/flying to a specific aimag (or cursor-anchored scroll-wheel
+      // zoom) can leave the map centered somewhere off in Mongolia's corner —
+      // fine while zoomed in on that area, but once the visitor zooms all
+      // the way back out, seeing the whole world with the country still
+      // pinned to that same off-center point puts it near the edge of the
+      // view instead of the middle. Snapping back to Mongolia's own center
+      // whenever the minimum zoom is reached keeps "fully zoomed out" always
+      // meaning "Mongolia in the middle", regardless of where the view was
+      // before zooming out.
+      m.on('zoomend', () => {
+        if (m.getZoom() === m.getMinZoom()) m.panTo([46.8, 103.8], { animate: true });
+      });
       // Plain satellite tiles (no baked-in place-name labels) — `lyrs=y` (hybrid)
       // draws Google's own city/country labels straight into the raster image,
       // which collided with our own aimag-name/pin labels drawn on top.
@@ -682,7 +720,8 @@ export default class BigBangLayout extends React.Component<Props, any> {
       this._aimagLabelLayer = window.L.layerGroup().addTo(m);
       this._pinLayer = window.L.layerGroup().addTo(m);
       this._aimagLayers = {};
-      this._aimagBuilt = false;
+      // ADM1 is the sole visible and interactive aimag geometry.
+      this.addCountryBorder(m);
       // Bottom-right, away from the layer/hazard panels that run down the
       // left edge — the default top-left put it underneath them.
       if (m.zoomControl) m.zoomControl.setPosition('bottomright');
@@ -692,6 +731,115 @@ export default class BigBangLayout extends React.Component<Props, any> {
     };
     init();
   };
+
+  // Load the authoritative ADM0/ADM1 polygons used for every visible border,
+  // label, hover target, click selection and selected-aimag zoom bound.
+  addCountryBorder(m: any) {
+    // These GeoJSON files are tracked through Git LFS. jsDelivr serves the
+    // tiny LFS pointer text for this pinned revision instead of the actual
+    // JSON, so JSON parsing failed and the corrected border never appeared.
+    // GitHub's media host resolves the LFS object itself and remains pinned to
+    // the same immutable revision.
+    const base = 'https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/9469f09/releaseData/gbOpen/MNG';
+    Promise.all([
+      fetch(`${base}/ADM0/geoBoundaries-MNG-ADM0_simplified.geojson`).then((r) => { if (!r.ok) throw new Error(String(r.status)); return r.json(); }),
+      fetch(`${base}/ADM1/geoBoundaries-MNG-ADM1_simplified.geojson`).then((r) => { if (!r.ok) throw new Error(String(r.status)); return r.json(); }),
+    ])
+      .then(([countryData, aimagData]) => {
+        if (this._mainMap !== m || !window.L) return;
+
+        // This product treats Baganuur and Bagakhangai as part of the
+        // surrounding Töv map instead of rendering Ulaanbaatar's detached
+        // districts as separate islands. In this pinned ADM1 file UB is a
+        // three-part MultiPolygon whose first/largest component is the main
+        // city. Keep that component only. Töv already covers Baganuur; for
+        // both detached districts we union their exact polygons into Töv so
+        // the shared/exclusion boundaries disappear completely rather than
+        // merely becoming non-interactive outlines.
+        const ubFeature = (aimagData.features || []).find((f: any) => f.properties?.shapeISO === 'MN-1');
+        const tovFeature = (aimagData.features || []).find((f: any) => f.properties?.shapeISO === 'MN-047');
+        if (ubFeature?.geometry?.type === 'MultiPolygon' && tovFeature?.geometry?.type === 'Polygon') {
+          const detachedDistricts = ubFeature.geometry.coordinates.slice(1);
+          const mergedTov = polygonClipping.union(
+            tovFeature.geometry.coordinates as any,
+            ...detachedDistricts.map((polygon: any) => polygon),
+          );
+          tovFeature.geometry = { type: 'MultiPolygon', coordinates: mergedTov };
+          ubFeature.geometry.coordinates = ubFeature.geometry.coordinates.slice(0, 1);
+        }
+
+        const group = window.L.layerGroup().addTo(m);
+        // Dark casing masks the less-accurate outer edge already present in
+        // each aimag polygon; the crisp cream stroke above remains legible on
+        // snow, desert and forest satellite textures alike.
+        window.L.geoJSON(countryData, {
+          interactive: false,
+          style: { color: 'rgba(0,0,0,.78)', weight: 5.2, opacity: 1, fill: false, lineJoin: 'round' },
+        }).addTo(group);
+        window.L.geoJSON(countryData, {
+          interactive: false,
+          style: { color: 'rgba(246,241,231,.92)', weight: 1.9, opacity: 1, fill: false, lineJoin: 'round' },
+        }).addTo(group);
+
+        // A black casing sits below the interactive cream stroke so the
+        // border stays visible over both snow and desert satellite imagery.
+        window.L.geoJSON(aimagData, {
+          interactive: false,
+          style: { color: 'rgba(0,0,0,.78)', weight: 4.6, opacity: 1, fill: false, lineJoin: 'round' },
+        }).addTo(group);
+
+        // Use the new ADM1 polygons themselves for hover and selection. ISO
+        // codes are stable even when a source spells an aimag differently.
+        const isoToMn: Record<string, string> = {
+          'MN-1': 'Улаанбаатар', 'MN-035': 'Орхон', 'MN-037': 'Дархан-Уул', 'MN-039': 'Хэнтий',
+          'MN-041': 'Хөвсгөл', 'MN-043': 'Ховд', 'MN-046': 'Увс', 'MN-047': 'Төв',
+          'MN-049': 'Сэлэнгэ', 'MN-051': 'Сүхбаатар', 'MN-053': 'Өмнөговь', 'MN-055': 'Өвөрхангай',
+          'MN-057': 'Завхан', 'MN-059': 'Дундговь', 'MN-061': 'Дорнод', 'MN-063': 'Дорноговь',
+          'MN-064': 'Говьсүмбэр', 'MN-065': 'Говь-Алтай', 'MN-067': 'Булган',
+          'MN-069': 'Баянхонгор', 'MN-071': 'Баян-Өлгий', 'MN-073': 'Архангай',
+        };
+        const legacyShapeById = new Map((this.geo?.shapes || []).map((sh: any) => [GEO_MN[sh.name] || sh.name, sh]));
+        (aimagData.features || []).forEach((feature: any) => {
+          const id = isoToMn[feature.properties?.shapeISO];
+          if (!id) return;
+          const layer = window.L.geoJSON(feature, {
+            interactive: true,
+            style: {
+              color: 'rgba(246,241,231,.92)', weight: 1.7, opacity: 1,
+              fillColor: '#fff', fillOpacity: 0.015, lineJoin: 'round',
+            },
+          })
+            .on('mouseover', () => this.setState({ hoverAimag: id }))
+            .on('mouseout', () => this.setState({ hoverAimag: null }))
+            .on('click', () => this.setState((s: any) => ({
+              mapAimag: s.mapAimag === id ? null : id,
+              pin: -1, nearMeActive: false,
+            })))
+            .addTo(this._aimagPolyLayer);
+          const bounds = layer.getBounds();
+          const center = bounds.getCenter();
+          const label = window.L.marker(center, {
+            icon: window.L.divIcon({ className: '', html: '', iconSize: [1, 1] }),
+            interactive: false, opacity: 1,
+          }).addTo(this._aimagLabelLayer);
+          this._aimagLayers[id] = { layers: [layer], label, sh: legacyShapeById.get(id), bounds };
+          this._adm1FeaturesById[id] = feature;
+        });
+        this._fullBounds = window.L.geoJSON(countryData).getBounds();
+        group.eachLayer((layer: any) => layer.bringToFront?.());
+        this._aimagPolyLayer.eachLayer((layer: any) => layer.bringToFront?.());
+        this._aimagLabelLayer.eachLayer((layer: any) => layer.bringToFront?.());
+        // Small city/province polygons enclosed by a larger aimag must remain
+        // above their host so their own hover and click targets are reachable.
+        ['Улаанбаатар', 'Дархан-Уул', 'Орхон', 'Говьсүмбэр'].forEach((id) => {
+          this._aimagLayers[id]?.layers.forEach((layer: any) => layer.bringToFront?.());
+          this._aimagLayers[id]?.label?.bringToFront?.();
+        });
+        this._countryBorderLayer = group;
+        this.syncMainMap();
+      })
+      .catch(() => { /* Aimag borders remain available if the CDN is offline. */ });
+  }
 
   // Road/rail overlays from OpenStreetMap, generated into public/osm by
   // `bun run sync:osm`. Fetched on first use rather than at page load: each
@@ -800,23 +948,22 @@ export default class BigBangLayout extends React.Component<Props, any> {
 
   syncDangerZone() {
     const m = this._mainMap;
-    if (!m || !window.L || !this.geo) return;
+    if (!m || !window.L) return;
     if (this._dangerLayer) { this._dangerLayer.remove(); this._dangerLayer = null; }
     const zone = DANGER_ZONES.find((z) => z.key === this.state.dangerZone);
     if (!zone) return;
     const group = window.L.layerGroup();
-    this.geo.shapes.forEach((sh: any) => {
-      const id = GEO_MN[sh.name] || sh.name;
+    Object.entries(this._adm1FeaturesById).forEach(([id, feature]) => {
       if (!zone.aimags.includes(id)) return;
-      this.polysOf(sh).forEach((ring: any) => {
-        window.L.polygon(ring.map(([x, y]: [number, number]) => xyToLonLat(x, y) as [number, number]), {
-          // Non-interactive like the OSM overlays: a hazard zone covering nine
-          // aimags would otherwise eat every click meant for the map beneath.
-          interactive: false,
+      window.L.geoJSON(feature, {
+        // Non-interactive like the OSM overlays: a hazard zone covering nine
+        // aimags would otherwise eat every click meant for the map beneath.
+        interactive: false,
+        style: {
           color: zone.color, weight: 1.5, opacity: 0.9,
           fillColor: zone.color, fillOpacity: 0.18,
-        }).addTo(group);
-      });
+        },
+      }).addTo(group);
     });
     group.addTo(m);
     // Under the pins and the road lines — this is a wash of context, not the
@@ -848,8 +995,8 @@ export default class BigBangLayout extends React.Component<Props, any> {
     // deliberately kept so remounting redraws without downloading again.
     this._osmLayer = {};
     this._dangerLayer = null;
-    this._mainMap = null; this._aimagPolyLayer = null; this._aimagLabelLayer = null; this._pinLayer = null;
-    this._aimagLayers = {}; this._aimagBuilt = false; this._fullBounds = null; this._wasZoomed = false; this._lastFlownAimag = null; this._enclaveHost = {};
+    this._mainMap = null; this._countryBorderLayer = null; this._aimagPolyLayer = null; this._aimagLabelLayer = null; this._pinLayer = null;
+    this._aimagLayers = {}; this._adm1FeaturesById = {}; this._fullBounds = null; this._wasZoomed = false; this._lastFlownAimag = null; this._enclaveHost = {};
     this._lastFlownNearKey = null;
   }
 
@@ -874,10 +1021,7 @@ export default class BigBangLayout extends React.Component<Props, any> {
   setNearRadius = (km: number) => this.setState({ nearRadiusKm: km });
   clearNearMe = () => this.setState({ nearMeActive: false, pin: -1 });
 
-  // (Re)builds the aimag border layer once geo is available, then restyles
-  // it + the pin markers to match current state. Called after mount, after
-  // the mn-aimags.json fetch resolves, and from componentDidUpdate whenever
-  // a field that affects what the map shows changes (see componentDidUpdate).
+  // Restyles the authoritative ADM1 layer and pin markers to match state.
   syncMainMap(rebuildPins: boolean = true) {
     const m = this._mainMap;
     const geo = this.geo;
@@ -886,62 +1030,9 @@ export default class BigBangLayout extends React.Component<Props, any> {
     this.syncOsmLayers();
     this.syncDangerZone();
     const accent = this.props.accent ?? '#E8B84B';
-    const mnOf = (n: string) => GEO_MN[n] || n;
     const pins = this.mapPins();
     const countByAimag: Record<string, number> = {};
     pins.forEach((p) => { countByAimag[p.aimag] = (countByAimag[p.aimag] || 0) + 1; });
-
-    if (!this._aimagBuilt) {
-      this._aimagBuilt = true;
-      const allCorners: [number, number][] = [];
-      geo.shapes.forEach((sh: any) => {
-        const id = mnOf(sh.name);
-        const rings = this.polysOf(sh).map((ring) => ring.map(([x, y]) => xyToLonLat(x, y) as [number, number]));
-        const layers = rings.map((ring) => window.L.polygon(ring, {
-          color: 'rgba(255,255,255,.55)', weight: 2.2, fillColor: 'rgba(255,255,255,0.02)', fillOpacity: 1,
-        })
-          .on('mouseover', () => this.setState({ hoverAimag: id }))
-          .on('mouseout', () => this.setState({ hoverAimag: null }))
-          .on('click', () => this.setState((s: any) => ({ mapAimag: s.mapAimag === id ? null : id, pin: -1, nearMeActive: false })))
-          .addTo(this._aimagPolyLayer));
-        const [clat, clng] = xyToLonLat(sh.lx ?? sh.cx, sh.ly ?? sh.cy);
-        const label = window.L.marker([clat, clng], { icon: window.L.divIcon({ className: '', html: '', iconSize: [1, 1] }), interactive: false, opacity: 1 }).addTo(this._aimagLabelLayer);
-        this._aimagLayers[id] = { layers, label, sh };
-        allCorners.push(xyToLonLat(sh.bx, sh.by) as [number, number], xyToLonLat(sh.bx + sh.bw, sh.by + sh.bh) as [number, number]);
-      });
-      this._fullBounds = allCorners;
-
-      // Улаанбаатар/Дархан-Уул/Орхон/Говьсүмбэр sit fully enclosed inside a
-      // larger neighbor. SVG hit-testing goes by DOM order, not area, so
-      // whichever polygon the source GeoJSON happened to list last was
-      // swallowing clicks/hover meant for the small aimag underneath —
-      // bring the enclosed ones to front so they always win.
-      const ENCLAVE_AIMAGS = ['Orhon', 'Darhan-Uul', 'Gowisümber', 'Ulaanbaatar'];
-      geo.shapes.forEach((sh: any) => {
-        if (!ENCLAVE_AIMAGS.includes(sh.name)) return;
-        const entry = this._aimagLayers[mnOf(sh.name)];
-        if (entry) entry.layers.forEach((ly: any) => ly.bringToFront());
-      });
-
-      // Told/Сэлэнгэ's own `d` isn't just their outer boundary — it also has
-      // a second subpath tracing Улаанбаатар/Дархан-Уул's own outline as a
-      // literal hole (that's *why* their gold fill stopped exactly at the
-      // small aimag's edge even before any of the above). Detect that here
-      // (find each shape's *other* subpaths and check which neighbor's
-      // centroid falls inside one) so the styling pass below can make the
-      // enclave inherit its host's fill instead of standing out as a second,
-      // separately-selected patch when only the host is selected/hovered.
-      geo.shapes.forEach((hostSh: any) => {
-        const rings = this.polysOf(hostSh);
-        if (rings.length < 2) return;
-        const outer = rings.reduce((best: number[][], r: number[][]) => (r.length > best.length ? r : best));
-        rings.forEach((ring: number[][]) => {
-          if (ring === outer) return;
-          const enclaveSh = geo.shapes.find((o: any) => o !== hostSh && this.pointInRing(ring, o.cx, o.cy));
-          if (enclaveSh) this._enclaveHost[mnOf(enclaveSh.name)] = mnOf(hostSh.name);
-        });
-      });
-    }
 
     Object.keys(this._aimagLayers).forEach((id) => {
       const { layers, label } = this._aimagLayers[id];
@@ -962,16 +1053,24 @@ export default class BigBangLayout extends React.Component<Props, any> {
       const selfOrHostSelected = isSel || (!!hostId && mapAimag === hostId);
       const hostHov = !isHov && !!hostId && hoverAimag === hostId;
       const fill = (!selfOrHostSelected && (isHov || hostHov)) ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,0.02)';
-      layers.forEach((ly: any) => ly.setStyle({ fillColor: fill, fillOpacity: 1, color: isSel ? accent : 'rgba(255,255,255,.55)', weight: isSel ? 4.8 : 2.2 }));
-      const count = countByAimag[id] || 0;
-      const showCount = count > 0 && !mapAimag;
-      const visible = mapAimag ? isSel : true;
-      const html = !visible ? '' :
-        '<div style="transform:translate(-50%,-50%);text-align:center;pointer-events:none;font-family:Manrope,sans-serif">' +
-        '<div style="font-size:' + (bigText ? 15 : 12) + 'px;font-weight:700;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.9),0 0 3px rgba(0,0,0,.9)">' + aimagName(id, lang) + '</div>' +
-        (showCount ? '<div style="font-size:' + (bigText ? 12.5 : 10) + 'px;font-weight:800;color:' + accent + ';text-shadow:0 1px 4px rgba(0,0,0,.9)">' + count + ' пин</div>' : '') +
-        '</div>';
-      label.setIcon(window.L.divIcon({ className: '', html, iconSize: [1, 1] }));
+      layers.forEach((ly: any) => ly.setStyle({ fillColor: fill, fillOpacity: 1, color: isSel ? accent : 'rgba(255,255,255,.55)', weight: isSel ? 3.8 : 1.7 }));
+      // The label's own HTML depends only on mapAimag/count/lang/bigText —
+      // none of which can differ from what's already on screen during a
+      // hover-only sync (see componentDidUpdate's pinsChanged — hoverAimag
+      // alone dispatches here specifically because none of those changed).
+      // Skipping this rebuilds 22 fewer divIcons (a fresh HTML string parse
+      // + Leaflet DOM node swap each) per mouseover/mouseout on the map.
+      if (rebuildPins) {
+        const count = countByAimag[id] || 0;
+        const showCount = count > 0 && !mapAimag;
+        const visible = mapAimag ? isSel : true;
+        const html = !visible ? '' :
+          '<div style="transform:translate(-50%,-50%);text-align:center;pointer-events:none;font-family:Manrope,sans-serif">' +
+          '<div style="font-size:' + (bigText ? 15 : 12) + 'px;font-weight:700;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.9),0 0 3px rgba(0,0,0,.9)">' + aimagName(id, lang) + '</div>' +
+          (showCount ? '<div style="font-size:' + (bigText ? 12.5 : 10) + 'px;font-weight:800;color:' + accent + ';text-shadow:0 1px 4px rgba(0,0,0,.9)">' + count + ' пин</div>' : '') +
+          '</div>';
+        label.setIcon(window.L.divIcon({ className: '', html, iconSize: [1, 1] }));
+      }
     });
 
     if (!rebuildPins) return;
@@ -1058,9 +1157,8 @@ export default class BigBangLayout extends React.Component<Props, any> {
       // also re-runs on every hover/pin-click while an aimag stays selected,
       // and re-flying then would snap the map back under the user's hands
       // every time they'd tried to pan/zoom freely after selecting.
-      if (sh && this._lastFlownAimag !== mapAimag) {
-        const bounds = this.polysOf(sh).flat().map(([x, y]: number[]) => xyToLonLat(x, y));
-        m.flyToBounds(bounds, { ...BigBangLayout.FLY_PAD, maxZoom: 11, duration: 0.9 });
+      if (entry?.bounds && this._lastFlownAimag !== mapAimag) {
+        m.flyToBounds(entry.bounds, { ...BigBangLayout.FLY_PAD, maxZoom: 11, duration: 0.9 });
         this._lastFlownAimag = mapAimag;
       }
       this._wasZoomed = true;
@@ -1074,12 +1172,16 @@ export default class BigBangLayout extends React.Component<Props, any> {
 
   // Real ScenicPin rows shaped into Pin[] — replaces PINS.concat(userPins).
   allPins(): Pin[] {
-    return (this.state.liveScenicPins || []).map((p: any): Pin => ({
+    const pins: any[] = this.state.liveScenicPins || [];
+    if (this._allPinsCache && this._allPinsCache.src === pins) return this._allPinsCache.result;
+    const result = pins.map((p: any): Pin => ({
       id: p.id, name: p.name, type: p.type, aimag: p.aimag ? p.aimag.name : 'Улаанбаатар',
       img: (p.images && p.images[0]) || '', images: p.images || [], desc: p.description || '',
       mapUrl: p.googleMapUrl || undefined,
       lat: p.lat ?? undefined, lng: p.lng ?? undefined,
     }));
+    this._allPinsCache = { src: pins, result };
+    return result;
   }
 
   mapPins(): any[] {

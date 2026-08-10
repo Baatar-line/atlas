@@ -23,7 +23,7 @@ function FaqSection({ V }: { V: any }) {
       {/* Two per row on desktop. `items-start` matters: without it the grid
           stretches both cells in a row to the same height, so opening one
           answer would leave a tall empty box next to it. */}
-      <div className={V.isMobile ? 'flex max-w-[720px] flex-col gap-2' : 'grid max-w-[1040px] grid-cols-2 items-start gap-2'}>
+      <div className={V.isMobile ? 'flex max-w-[720px] flex-col gap-2' : 'grid max-w-[1040px] min-[1800px]:max-w-none grid-cols-2 items-start gap-2'}>
         {V.faq.map((item: any, i: number) => {
           const isOpen = open === i;
           return (
@@ -95,7 +95,7 @@ export default function ProfilePage() {
     return (
       <section
         data-screen-label="Профайл — нэвтрээгүй"
-        className={`min-h-screen box-border max-w-[1080px] mx-auto flex items-center justify-center ${V.isMobile ? 'px-[18px]' : 'px-12'}`}
+        className={`min-h-screen box-border max-w-[1080px] min-[1800px]:max-w-[1200px] mx-auto flex items-center justify-center ${V.isMobile ? 'px-[18px]' : 'px-12'}`}
       >
         <div className="flex flex-col items-center gap-4 text-center py-16">
           <div className="flex h-14 w-14 items-center justify-center rounded-full border border-[rgba(242,237,227,.2)] bg-[rgba(255,255,255,.03)] text-[rgba(242,237,227,.6)]">
@@ -119,7 +119,7 @@ export default function ProfilePage() {
   return (
     <section
       data-screen-label="Профайл"
-      className={`min-h-screen box-border max-w-[1080px] mx-auto ${V.isMobile ? 'pt-24 px-[18px] pb-10' : 'pt-[110px] px-12 pb-[60px]'}`}
+      className={`min-h-screen box-border max-w-[1080px] min-[1800px]:max-w-[1200px] mx-auto ${V.isMobile ? 'pt-24 px-[18px] pb-10' : 'pt-[110px] px-12 pb-[60px]'}`}
     >
       <div className="flex items-center gap-5 pb-7 border-b border-[rgba(255,255,255,.1)]">
         <div className="w-[78px] h-[78px] rounded-full overflow-hidden bg-[linear-gradient(135deg,_var(--accent,#E8B84B),_#b8895a)] flex items-center justify-center text-[30px] font-extrabold text-[#132a1f] flex-none">

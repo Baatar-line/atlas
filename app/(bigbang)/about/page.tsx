@@ -6,13 +6,12 @@ import { BigBangContext } from '@/components/bigbang/BigBangLayout';
 import LanyardBadge from '@/components/bigbang/LanyardBadge';
 import { BgMedia } from '@/components/bigbang/ui';
 
-// Groups a space-separated vertical-script string 2 words per column (line),
+// Groups a space-separated vertical-script string 1 word per column (line),
 // joined with a real `\n` — paired with `whiteSpace: 'pre'` on the element so
 // the browser breaks exactly where told instead of auto-wrapping (which
 // doesn't reliably clip for vertical Mongolian script and used to run the
-// text past its row). One word per column read as too many/too narrow
-// columns strung across the screen — two keeps the column count down.
-function mnVertLines(s: string, perLine = 2): string {
+// text past its row).
+function mnVertLines(s: string, perLine = 1): string {
   const words = s.split(' ');
   const lines: string[] = [];
   for (let i = 0; i < words.length; i += perLine) lines.push(words.slice(i, i + perLine).join(' '));
@@ -38,27 +37,27 @@ export default function AboutPage() {
         <div className="absolute inset-0 bg-[linear-gradient(100deg,_rgba(0,0,0,.88)_0%,_rgba(0,0,0,.6)_34%,_rgba(0,0,0,.16)_62%,_rgba(0,0,0,.4)_100%)]"></div>
         <div className="absolute inset-0 bg-[linear-gradient(180deg,_rgba(0,0,0,.55)_0%,_rgba(0,0,0,.08)_14%,_rgba(0,0,0,.08)_44%,_rgba(0,0,0,.42)_60%,_rgba(0,0,0,.85)_100%)]"></div>
 
-        <div className="relative z-[2] pt-[104px] px-5 pb-0 text-center">
+        <div className="relative z-[2] pt-[76px] px-5 pb-0 text-center">
           <h1 className="m-0 text-[clamp(30px,4.4vw,54px)] font-extrabold leading-[1.14] text-cream-2 [text-shadow:0_4px_30px_rgba(0,0,0,.45)] [font-family:'Marcellus_SC',serif]">{V.L.abBig}</h1>
         </div>
 
-        <div className="relative z-[2] mx-auto max-w-[640px] pt-14 px-7 pb-16">
+        <div className="relative z-[2] mx-auto max-w-[640px] min-[1800px]:max-w-[820px] min-[1800px]:pt-12 pt-10 px-7 pb-10">
           <div>
             {/* icon and label both sit flush at the row's top, in the same 40px
                 band, so their centers line up; the connector is one stub below
                 each icon (not a line running behind it) reaching down to the next */}
             {V.abTimeline.map((row: any, i: number) => (
-              <div key={i} className="flex gap-4">
+              <div key={i} className="flex gap-4 min-[1800px]:gap-6">
                 <div className="flex w-10 flex-none flex-col items-center">
                   <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full border border-[rgba(242,237,227,.32)] bg-transparent text-cream"><row.icon size={17} /></span>
                   <div className={`w-px flex-shrink-0 basis-0 bg-[rgba(242,237,227,.28)] ${i === V.abTimeline.length - 1 ? 'grow-0' : 'grow'}`}></div>
                 </div>
-                <div className="flex flex-1 items-start justify-between gap-3.5 pb-8">
+                <div className="flex flex-1 items-start justify-between gap-3.5 pb-6">
                   <div className="flex-1">
                     <div className="flex min-h-10 items-center">
                       <div className="text-[11px] font-extrabold uppercase tracking-[.1em] text-[var(--accent,#E8B84B)]">{row.label}</div>
                     </div>
-                    <div className="mt-1.5 max-w-[380px] text-sm leading-[1.65] text-cream">{row.desc}</div>
+                    <div className="mt-1.5 max-w-[520px] min-[1800px]:max-w-[640px] text-sm min-[1800px]:text-[16px] leading-[1.65] text-cream">{row.desc}</div>
                   </div>
                   {/* One word per column (same manual-\n approach the short
                       `vert` title already used successfully) instead of letting
@@ -72,7 +71,7 @@ export default function AboutPage() {
                       so it's dropped on mobile. */}
                   {!V.isMobile && (row.vert || row.descVert) && (
                     <div
-                      className="max-w-[300px] flex-none whitespace-pre text-[16px] leading-tight [writing-mode:vertical-lr] [font-family:'Mongolian_Baiti','Menksoft_Tigst',sans-serif]"
+                      className="max-w-[300px] min-[1800px]:max-w-[360px] flex-none whitespace-pre text-[16px] min-[1800px]:text-[18px] leading-tight [writing-mode:vertical-lr] [font-family:'Mongolian_Baiti','Menksoft_Tigst',sans-serif]"
                       title="Уламжлалт бичиг — AI орчуулга, шалгагдаагvй"
                     >
                       {row.vert && <span className="font-bold text-[var(--accent,#E8B84B)]">{row.vert}</span>}
@@ -85,11 +84,7 @@ export default function AboutPage() {
           </div>
         </div>
 
-        <div className="relative z-[2] mx-auto max-w-[1100px] px-7 pb-12">
-          <div className="mb-5 flex items-baseline gap-3">
-            <h2 className="m-0 text-xl font-extrabold tracking-[-0.02em] text-cream-2">{V.L.abTeamT}</h2>
-            <span className="font-mono text-[11px] text-[rgba(242,237,227,.5)]">06</span>
-          </div>
+        <div className="relative z-[2] mx-auto max-w-[1100px] min-[1800px]:max-w-[1380px] px-7 pb-12">
           {/* Same hanging-cord badges as the nav logo — real name/role on a
               bigger card (LanyardBadge's `large` variant), swinging on the
               same verlet-rope physics, draggable/knockable the same way.
