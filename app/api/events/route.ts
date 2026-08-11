@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
 import { requireAuth, jsonError } from '../../../lib/auth-helpers';
+import { DEMO_EVENTS } from '../../../lib/demo-events';
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const aimagId = searchParams.get('aimagId');
+    const includeCatalog = searchParams.get('catalog') === '1' && !aimagId;
     const events = await prisma.event.findMany({
       where: aimagId ? { aimagId: Number(aimagId) } : undefined,
       // _count.attendees backs the "N хүн очно" headcount on the event's
@@ -15,7 +17,10 @@ export async function GET(request: Request) {
       include: { aimag: true, _count: { select: { attendees: true } } },
       orderBy: { startDate: 'asc' },
     });
-    return NextResponse.json(events);
+    const payload = includeCatalog ? [...DEMO_EVENTS, ...events] : events;
+    return NextResponse.json(payload, {
+      headers: includeCatalog ? { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' } : undefined,
+    });
   } catch (err) {
     return jsonError(err);
   }
