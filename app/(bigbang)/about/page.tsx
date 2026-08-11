@@ -37,11 +37,29 @@ export default function AboutPage() {
         <div className="absolute inset-0 bg-[linear-gradient(100deg,_rgba(0,0,0,.88)_0%,_rgba(0,0,0,.6)_34%,_rgba(0,0,0,.16)_62%,_rgba(0,0,0,.4)_100%)]"></div>
         <div className="absolute inset-0 bg-[linear-gradient(180deg,_rgba(0,0,0,.55)_0%,_rgba(0,0,0,.08)_14%,_rgba(0,0,0,.08)_44%,_rgba(0,0,0,.42)_60%,_rgba(0,0,0,.85)_100%)]"></div>
 
-        <div className="relative z-[2] pt-[76px] px-5 pb-0 text-center">
+        {/* Title and the four timeline rows are one fold: on desktop this box
+            is a full screen tall, so the whole story lands in the first view
+            and the team badges below can't peek into it. Fitting it there is
+            what the width and the vh-scaled spacing inside are for — the
+            min-height only reserves the screen, it can't shrink anything.
+
+            Left at auto height on mobile, where the vertical script is
+            dropped and the column is a phone wide: four paragraphs don't fit
+            one phone screen at any type size worth reading. 640px rather than
+            Tailwind's `md`, to switch on at exactly the width V.isMobile uses
+            — the two decisions are the same decision. */}
+        <div className="relative z-[2] flex flex-col min-[640px]:min-h-screen">
+        <div className="pt-[clamp(64px,8vh,76px)] px-5 pb-0 text-center">
           <h1 className="m-0 text-[clamp(30px,4.4vw,54px)] font-extrabold leading-[1.14] text-cream-2 [text-shadow:0_4px_30px_rgba(0,0,0,.45)] [font-family:'Marcellus_SC',serif]">{V.L.abBig}</h1>
         </div>
 
-        <div className="relative z-[2] mx-auto max-w-[640px] min-[1800px]:max-w-[820px] min-[1800px]:pt-12 pt-10 px-7 pb-10">
+        {/* Wide enough that each paragraph runs two or three lines instead of
+            the five or six a 640px column forced — that alone is most of the
+            height this fold had to lose, and it costs nothing but whitespace
+            the hero photo was showing anyway. The remaining spacing scales
+            with viewport height so a short laptop tightens rather than
+            overflows. */}
+        <div className="mx-auto w-full max-w-[1040px] min-[1800px]:max-w-[1240px] pt-[clamp(14px,3vh,40px)] px-7 pb-[clamp(16px,3vh,40px)]">
           <div>
             {/* icon and label both sit flush at the row's top, in the same 40px
                 band, so their centers line up; the connector is one stub below
@@ -52,12 +70,15 @@ export default function AboutPage() {
                   <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full border border-[rgba(242,237,227,.32)] bg-transparent text-cream"><row.icon size={17} /></span>
                   <div className={`w-px flex-shrink-0 basis-0 bg-[rgba(242,237,227,.28)] ${i === V.abTimeline.length - 1 ? 'grow-0' : 'grow'}`}></div>
                 </div>
-                <div className="flex flex-1 items-start justify-between gap-3.5 pb-6">
+                <div className="flex flex-1 items-start justify-between gap-3.5 pb-[clamp(10px,2.6vh,24px)]">
                   <div className="flex-1">
                     <div className="flex min-h-10 items-center">
                       <div className="text-[11px] font-extrabold uppercase tracking-[.1em] text-[var(--accent,#E8B84B)]">{row.label}</div>
                     </div>
-                    <div className="mt-1.5 max-w-[520px] min-[1800px]:max-w-[640px] text-sm min-[1800px]:text-[16px] leading-[1.65] text-cream">{row.desc}</div>
+                    {/* Capped well short of the column it now sits in: the
+                        width is there to cut the line count, not to run a
+                        sentence the full 900px across. */}
+                    <div className="mt-1.5 max-w-[560px] min-[1800px]:max-w-[680px] text-[clamp(13px,1.6vh,15px)] min-[1800px]:text-[16px] leading-[1.6] text-cream">{row.desc}</div>
                   </div>
                   {/* One word per column (same manual-\n approach the short
                       `vert` title already used successfully) instead of letting
@@ -67,11 +88,19 @@ export default function AboutPage() {
                       past the row into the next one. Width grows with the column
                       count instead of being capped, height is auto (no overflow
                       clipping needed since nothing is forced to wrap blind).
-                      Needs real horizontal room next to the 380px-wide paragraph,
-                      so it's dropped on mobile. */}
+                      Needs real horizontal room next to the paragraph, so it's
+                      dropped on mobile.
+
+                      No max-width, and that is the point: whitespace-pre can't
+                      wrap, so a cap never shortened this text — it just made
+                      the flex row reserve less space than the script actually
+                      draws, and the overflow ran on toward the viewport edge
+                      where the hero's overflow-hidden was waiting to cut it.
+                      Sized to its content, the row divides honestly between
+                      the two columns. */}
                   {!V.isMobile && (row.vert || row.descVert) && (
                     <div
-                      className="max-w-[300px] min-[1800px]:max-w-[360px] flex-none whitespace-pre text-[16px] min-[1800px]:text-[18px] leading-tight [writing-mode:vertical-lr] [font-family:'Mongolian_Baiti','Menksoft_Tigst',sans-serif]"
+                      className="flex-none whitespace-pre text-[16px] min-[1800px]:text-[18px] leading-tight [writing-mode:vertical-lr] [font-family:'Mongolian_Baiti','Menksoft_Tigst',sans-serif]"
                       title="Уламжлалт бичиг — AI орчуулга, шалгагдаагvй"
                     >
                       {row.vert && <span className="font-bold text-[var(--accent,#E8B84B)]">{row.vert}</span>}
@@ -82,6 +111,7 @@ export default function AboutPage() {
               </div>
             ))}
           </div>
+        </div>
         </div>
 
         <div className="relative z-[2] mx-auto max-w-[1100px] min-[1800px]:max-w-[1380px] px-7 pb-12">
