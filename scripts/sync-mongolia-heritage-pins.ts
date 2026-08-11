@@ -59,6 +59,7 @@ export function heritageImages(site: Site): string[] {
     'Замын-Үүд — 1945 оны чөлөөлөх дайны зам': 'Zamyn Uud station.jpg',
     'Сайншанд — 1945 оны дайны ар талын төв': 'Sainshand railway station.jpg',
     'Ноён уулын Хүннүгийн язгууртны булш': 'Noin-Ula carpet.jpg',
+    'Хүйс толгойн бичээсийн олдсон нутаг': 'Хүйс толгойн бичээс.jpg',
   };
   const exactFile = exact[site.name];
   if (exactFile) return [commons(exactFile)];
@@ -146,10 +147,10 @@ export function heritageImages(site: Site): string[] {
   else if (site.type.includes('Хадны')) pool = rockArt;
   else if (site.type.includes('Хүн чулуун') || site.type.includes('Буган чулуу')) pool = deerAndHumanStone;
   else if (site.type.startsWith('Археологи') || site.type.startsWith('Түүх')) pool = archaeology;
-  const fallback = exactFile ? commons(exactFile) : (preferredFallback || pick(pool));
-  // If no verified ground photo exists, show real satellite imagery centred
-  // on this exact pin. This avoids both misleading stock photos and placeholders.
-  return [`/api/heritage-satellite?lat=${site.lat}&lng=${site.lng}&q=${encodeURIComponent(site.name)}`];
+  // Never substitute satellite imagery or a generic same-category landscape.
+  // The strict resolver returns a real, name-matched ground photograph when
+  // Commons has one and an honest "not yet verified" card otherwise.
+  return [`/api/heritage-image?strict=1&q=${encodeURIComponent(site.name)}`];
 }
 
 export const SITES: Site[] = [

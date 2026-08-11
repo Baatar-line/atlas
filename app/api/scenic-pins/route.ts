@@ -16,18 +16,26 @@ export async function GET(request: Request) {
     // The researched national catalogue is code-backed, not 60+ database
     // rows. This keeps admin CRUD clean and avoids a large table/rating fanout;
     // the map still receives DB pins + catalogue in one cacheable request.
-    const catalogue = includeCatalog ? HERITAGE_SITES.map((p) => ({
-      name: p.name,
-      type: p.type,
-      description: p.description,
-      images: heritageImages(p),
-      imageSource: 'Wikimedia Commons',
-      aimag: { name: p.aimag },
-      lat: p.lat,
-      lng: p.lng,
-      googleMapUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.mapQuery || `${p.lat},${p.lng}`)}`,
-      catalog: true,
-    })) : [];
+    const catalogue = includeCatalog ? HERITAGE_SITES.map((p) => {
+      const images = heritageImages(p);
+      return {
+        name: p.name,
+        type: p.type,
+        description: p.description,
+        images,
+        // Do not claim a Commons photograph for coordinate-only pins. The
+        // distinction is useful to the UI/admin audit and keeps attribution
+        // honest while the catalogue is curated further.
+        imageSource: images[0].startsWith('/api/heritage-image')
+          ? 'Wikimedia Commons · strict name match'
+          : 'Wikimedia Commons · curated photograph',
+        aimag: { name: p.aimag },
+        lat: p.lat,
+        lng: p.lng,
+        googleMapUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.mapQuery || `${p.lat},${p.lng}`)}`,
+        catalog: true,
+      };
+    }) : [];
     return NextResponse.json([...pins, ...catalogue], {
       headers: includeCatalog
         ? { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=3600' }

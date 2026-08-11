@@ -465,7 +465,7 @@ export default class BigBangLayout extends React.Component<Props, any> {
       apiGet<any[]>('/events?catalog=1'),
       // Versioned so a catalogue image-strategy change is visible immediately
       // instead of waiting behind the public endpoint's CDN cache.
-      apiGet<any[]>('/scenic-pins?catalog=1&v=11'),
+      apiGet<any[]>('/scenic-pins?catalog=1&v=13'),
       apiGet<any[]>('/brands/active'),
     ]).then(([livePlaces, liveEvents, liveScenicPins, liveBrands]) => {
       // GET /events carries _count.attendees — flattened into its own id→count

@@ -43,7 +43,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const q = (searchParams.get('q') || '').trim().slice(0, 180);
   const fallback = searchParams.get('fallback') || FALLBACK;
-  if (searchParams.get('strict') === '1') return verifiedPlaceholder(q || 'Монголын өв');
+  const strict = searchParams.get('strict') === '1';
   if (!q) return NextResponse.redirect(fallback, 307);
   try {
     const api = new URL('https://commons.wikimedia.org/w/api.php');
@@ -68,13 +68,13 @@ export async function GET(request: Request) {
       .filter((p) => p?.imageinfo?.[0]?.mime?.startsWith('image/'))
       .filter((p) => BITMAP.test(String(p.title || '').replace(/^File:/, '')))
       .sort((a, b) => Number(a.index || 999) - Number(b.index || 999))[0];
-    if (!hit) return fallbackCard(q, fallback);
+    if (!hit) return strict ? verifiedPlaceholder(q) : fallbackCard(q, fallback);
     const image = hit.imageinfo[0]?.thumburl || hit.imageinfo[0]?.url;
     return NextResponse.redirect(image, {
       status: 307,
       headers: { 'Cache-Control': 'public, s-maxage=604800, stale-while-revalidate=2592000' },
     });
   } catch {
-    return fallbackCard(q, fallback);
+    return strict ? verifiedPlaceholder(q) : fallbackCard(q, fallback);
   }
 }
