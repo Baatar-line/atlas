@@ -73,30 +73,47 @@ export default function AboutPage() {
                 {/* Tightened along with the third line each paragraph just
                     gained — four extra lines is about 90px, and the fold has
                     to keep fitting the short end of the viewport range. */}
-                <div className="flex flex-1 items-start justify-between gap-3.5 pb-[clamp(8px,2.4vh,22px)]">
-                  <div className="flex-1">
+                {/* The gutter between the two columns is the gap set here and
+                    nothing else. It used to be whatever the row had left
+                    over — around 190px — because this column grew to fill
+                    the row and pushed the script out to the far edge. The
+                    25em cap now lives on the column itself rather than on
+                    the paragraph inside it, so the column stops where its
+                    text stops and the leftover falls past the script instead
+                    of between them. That also lines the script's first
+                    column up at the same x on every row: vertical Mongolian
+                    runs left to right, so that edge is where each block
+                    begins reading, and it was the ragged one. */}
+                <div className="flex flex-1 items-start justify-start gap-10 pb-[clamp(8px,2.4vh,22px)]">
+                  {/* The type size sits on the column, not on the paragraph,
+                      because the 25em cap is measured in this element's own
+                      em — inherited 16px would have made it a fixed 400px and
+                      thrown the characters-per-line straight out of the
+                      window the paragraph below is set to. The label sets its
+                      own size and is unaffected. */}
+                  <div className="min-w-0 max-w-[25em] flex-1 text-[clamp(13px,1.6vh,15px)] min-[1800px]:text-[16px]">
                     <div className="flex min-h-10 items-center">
                       <div className="text-[11px] font-extrabold uppercase tracking-[.1em] text-[var(--accent,#E8B84B)]">{row.label}</div>
                     </div>
-                    {/* Three lines each, and the width is the only thing that
-                        decides that. The four paragraphs are 130, 128, 101
-                        and 101 characters, so every one of them lands on
-                        three lines only while a line holds between 44 and 50
-                        characters: fewer and the longest spills to four,
-                        more and the two shortest collapse to two. 25em is
-                        the middle of that window at roughly 0.53em per
-                        Cyrillic character.
+                    {/* Three lines each, and the column's 25em width above is
+                        the only thing that decides that. The four paragraphs
+                        are 130, 128, 101 and 101 characters, so every one of
+                        them lands on three lines only while a line holds
+                        between 44 and 50 characters: fewer and the longest
+                        spills to four, more and the two shortest collapse to
+                        two. 25em is the middle of that window at roughly
+                        0.53em per Cyrillic character.
 
                         em, not px, because the type here is fluid
-                        (clamp(13px,1.6vh,15px) below). A pixel width would
-                        hold still while the font grew with the viewport,
-                        walking the characters-per-line straight out of that
-                        window — a tall monitor would break the longest
-                        paragraph onto a fourth line and a short one would
-                        pull the shortest back to two. Sized in em the ratio
-                        can't drift, which is also why the 1800px tier needs
-                        no override of its own. */}
-                    <div className="mt-1.5 max-w-[25em] text-[clamp(13px,1.6vh,15px)] min-[1800px]:text-[16px] leading-[1.6] text-cream">{row.desc}</div>
+                        (clamp(13px,1.6vh,15px), set on the column above). A
+                        pixel width would hold still while the font grew with
+                        the viewport, walking the characters-per-line straight
+                        out of that window — a tall monitor would break the
+                        longest paragraph onto a fourth line and a short one
+                        would pull the shortest back to two. Sized in em the
+                        ratio can't drift, which is why the 1800px tier bumps
+                        only the type size and needs no width of its own. */}
+                    <div className="mt-1.5 leading-[1.6] text-cream">{row.desc}</div>
                   </div>
                   {/* One word per column (same manual-\n approach the short
                       `vert` title already used successfully) instead of letting
@@ -118,7 +135,17 @@ export default function AboutPage() {
                       the two columns. */}
                   {!V.isMobile && (row.vert || row.descVert) && (
                     <div
-                      className="flex-none whitespace-pre text-[16px] min-[1800px]:text-[18px] leading-tight [writing-mode:vertical-lr] [font-family:'Mongolian_Baiti','Menksoft_Tigst',sans-serif]"
+                      // 18px, up from 16. The ceiling is the row's own width,
+                      // not taste: this block is flex-none and sized to its
+                      // content, so every point of type size widens it by a
+                      // column's worth of pitch (~21 columns on the longest
+                      // row). Past roughly 20px the pair no longer fits the
+                      // 928px the row has, and the paragraph — flex-1, so it
+                      // yields first — would shrink under its 25em and lose
+                      // the three-line setting that width exists to hold.
+                      // Height is not the constraint: even the longest column
+                      // stays well under the paragraph beside it.
+                      className="flex-none whitespace-pre text-[18px] min-[1800px]:text-[20px] leading-tight [writing-mode:vertical-lr] [font-family:'Mongolian_Baiti','Menksoft_Tigst',sans-serif]"
                       title="Уламжлалт бичиг — AI орчуулга, шалгагдаагvй"
                     >
                       {row.vert && <span className="font-bold text-[var(--accent,#E8B84B)]">{row.vert}</span>}
