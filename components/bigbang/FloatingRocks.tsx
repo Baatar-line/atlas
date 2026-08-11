@@ -416,6 +416,61 @@ export default function FloatingRocks({ places, mapOpen = false, onReady }: { pl
       syncPlaceCards();
 
       const mouse = { x: 0, y: 0, targetX: 0, targetY: 0 };
+      // Phone tilt drives the same parallax target as a desktop pointer, so
+      // camera, rocks, tethered cards, light and cliff all move together.
+      // Values are calibrated from the device's first reading: this avoids a
+      // jump when somebody opens the page while holding the phone at their
+      // natural viewing angle rather than perfectly flat.
+      let motionListening = false;
+      let motionBaseBeta: number | null = null;
+      let motionBaseGamma: number | null = null;
+      const onDeviceTilt = (event: DeviceOrientationEvent) => {
+        if (event.beta == null || event.gamma == null || reducedMotion) return;
+        if (motionBaseBeta == null || motionBaseGamma == null) {
+          motionBaseBeta = event.beta;
+          motionBaseGamma = event.gamma;
+          return;
+        }
+        const tiltX = clamp(event.gamma - motionBaseGamma, -22, 22) / 22;
+        const tiltY = clamp(event.beta - motionBaseBeta, -18, 18) / 18;
+        // Low-pass interpolation in animate() removes sensor jitter. Keep the
+        // vertical direction aligned with the desktop pointer convention.
+        mouse.targetX = tiltX;
+        mouse.targetY = -tiltY;
+        pointerX = innerWidth * (tiltX * 0.5 + 0.5);
+        pointerY = innerHeight * (tiltY * 0.5 + 0.5);
+      };
+      const startMotionListening = () => {
+        if (motionListening) return;
+        motionListening = true;
+        window.addEventListener('deviceorientation', onDeviceTilt, { passive: true });
+      };
+      // Android exposes orientation immediately. iOS requires the permission
+      // request to happen inside a user gesture, so the first tap anywhere on
+      // the home scene enables it without adding a permanent overlay button.
+      const requestPhoneMotion = async () => {
+        const OrientationEvent = window.DeviceOrientationEvent as typeof DeviceOrientationEvent & {
+          requestPermission?: () => Promise<'granted' | 'denied'>;
+        };
+        try {
+          if (typeof OrientationEvent?.requestPermission === 'function') {
+            if (await OrientationEvent.requestPermission() === 'granted') startMotionListening();
+          } else {
+            startMotionListening();
+          }
+        } catch { /* Permission denied: pointer/touch interaction still works. */ }
+      };
+      const hasOrientation = typeof window.DeviceOrientationEvent !== 'undefined';
+      if (hasOrientation) {
+        const OrientationEvent = window.DeviceOrientationEvent as typeof DeviceOrientationEvent & {
+          requestPermission?: () => Promise<'granted' | 'denied'>;
+        };
+        if (typeof OrientationEvent.requestPermission === 'function') {
+          window.addEventListener('pointerdown', requestPhoneMotion, { once: true, capture: true });
+        } else {
+          startMotionListening();
+        }
+      }
       const raycaster = new THREE.Raycaster();
       const ndc = new THREE.Vector2();
       const dragPoint = new THREE.Vector3();
@@ -695,6 +750,8 @@ export default function FloatingRocks({ places, mapOpen = false, onReady }: { pl
       cleanup = () => {
         cancelAnimationFrame(animationFrame);
         window.removeEventListener('resize', onResize);
+        window.removeEventListener('deviceorientation', onDeviceTilt);
+        window.removeEventListener('pointerdown', requestPhoneMotion, { capture: true } as EventListenerOptions);
         host.removeEventListener('pointerdown', onPointerDown);
         host.removeEventListener('pointermove', onPointerMove);
         host.removeEventListener('pointerup', onPointerUp);
