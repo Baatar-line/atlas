@@ -2,9 +2,93 @@
 
 // Big Bang — Suggest (/suggest): top-rated carousel, curated collections, quick
 // picks, and the travel-apps kit.
-import { useContext } from 'react';
+import { useContext, useEffect, useRef } from 'react';
 import { BigBangContext } from '@/components/bigbang/BigBangLayout';
 import { BgMedia, Isometric3DIcon } from '@/components/bigbang/ui';
+
+// Drives a rail's scrollLeft forward a few pixels a second, so it drifts on
+// its own but a visitor can still take hold of it.
+//
+// scrollLeft rather than a CSS transform, which is what this used to be. A
+// transform moves the content under a viewport that must then be
+// overflow:hidden — otherwise the translated copy counts as scrollable width
+// — and hidden is exactly what stopped anyone scrolling the rail themselves.
+// Animating the same property a person scrolls means there is nothing to
+// reconcile: they scroll, we carry on from wherever they left it.
+//
+// Speed is per-second rather than a duration for the whole loop, so adding
+// brands makes the rail longer instead of faster.
+function useMarqueeDrift(pxPerSecond = 22) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    // No CSS rule can stop a scrollLeft animation, so this is where reduced
+    // motion has to be honoured. The rail stays an ordinary scroll rail.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    // The list is rendered twice, so one full copy — plus the gap trailing
+    // it — is the distance after which the rail looks identical to itself.
+    // Wrapping there rather than at scrollWidth is what makes the loop
+    // seamless instead of snapping back to the start.
+    //
+    // Measured on a ResizeObserver rather than per frame: scrollWidth and
+    // getComputedStyle both force layout, and paying that sixty times a
+    // second to re-derive a number that only changes when brands load or the
+    // window resizes is the kind of thing that makes a page feel heavy.
+    let wrap = 0;
+    const track = el.firstElementChild as HTMLElement | null;
+    const measure = () => {
+      const gap = track ? parseFloat(getComputedStyle(track).columnGap) || 0 : 0;
+      wrap = (el.scrollWidth + gap) / 2;
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (track) ro.observe(track);
+
+    let raf = 0;
+    let last = 0;
+    // Held while the pointer is anywhere over the rail — these cards are
+    // links, and a link that slides out from under the cursor is a target,
+    // not a link — and for a moment after any hands-on scroll, so momentum
+    // has somewhere to land before the drift takes the wheel back.
+    let holdUntil = 0;
+    // Math.max, so a wheel tick inside a hover can only extend the hold, not
+    // cut the pointer's own indefinite one short and start the rail moving
+    // under a cursor that never left.
+    const hold = () => { holdUntil = Math.max(holdUntil, performance.now() + 900); };
+    const enter = () => { holdUntil = Infinity; };
+    const leave = () => { holdUntil = performance.now() + 400; };
+
+    const step = (now: number) => {
+      raf = requestAnimationFrame(step);
+      const dt = last ? now - last : 0;
+      last = now;
+      // A backgrounded tab hands back a huge dt on its first frame back;
+      // capping it stops the rail jumping a screen at a time.
+      if (!dt || dt > 100 || now < holdUntil || wrap <= 0) return;
+      const next = el.scrollLeft + (pxPerSecond * dt) / 1000;
+      el.scrollLeft = next >= wrap ? next - wrap : next;
+    };
+
+    raf = requestAnimationFrame(step);
+    el.addEventListener('pointerenter', enter);
+    el.addEventListener('pointerleave', leave);
+    el.addEventListener('wheel', hold, { passive: true });
+    el.addEventListener('touchstart', hold, { passive: true });
+    el.addEventListener('touchmove', hold, { passive: true });
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+      el.removeEventListener('pointerenter', enter);
+      el.removeEventListener('pointerleave', leave);
+      el.removeEventListener('wheel', hold);
+      el.removeEventListener('touchstart', hold);
+      el.removeEventListener('touchmove', hold);
+    };
+  }, [pxPerSecond]);
+  return ref;
+}
 
 // Bento-style spans (desktop only — collapses to a plain single column on
 // mobile) for the 6 travel-app cards, matched by index to V.travelApps'
@@ -26,6 +110,7 @@ const TRAVEL_SPANS = [
 
 export default function SuggestPage() {
   const V: any = useContext(BigBangContext);
+  const brandRail = useMarqueeDrift();
   return (
     <section
       data-screen-label="Санал болгох"
@@ -59,19 +144,15 @@ export default function SuggestPage() {
           <div className="mb-6">
             <h2 className="m-0 mb-2 text-lg font-extrabold tracking-[-0.02em] text-cream">{V.L.brandsTitle}</h2>
             {/* Drifts on its own instead of waiting to be scrolled — a partner
-                rail nobody scrolls shows the same three logos forever. The list
-                is rendered twice so the loop has no seam (see .bb-marquee in
-                globals.css); the duplicate is aria-hidden so screen readers and
-                tab order still see each brand once.
+                rail nobody scrolls shows the same three logos forever — and
+                scrolls by hand as well, resuming from wherever it was left.
+                See useMarqueeDrift above for why one property does both.
 
-                Speed is per-card rather than fixed, so adding brands makes the
-                rail longer instead of faster — a fixed duration would speed
-                every card up as the list grows. */}
-            <div className="bb-marquee bb-hscroll pt-3 pb-1.5">
-              <div
-                className="bb-marquee-track flex gap-4"
-                style={{ animationDuration: `${Math.max(V.brands.length * 9, 30)}s` }}
-              >
+                The list is rendered twice so the wrap has no seam; the
+                duplicate is aria-hidden so screen readers and tab order still
+                see each brand once. */}
+            <div ref={brandRail} className="bb-marquee bb-hscroll pt-3 pb-1.5">
+              <div className="bb-marquee-track flex gap-4">
               {[...V.brands, ...V.brands].map((b: any, i: number) => {
                 const isClone = i >= V.brands.length;
                 // The sizing/flex-item classes live on whichever element ends

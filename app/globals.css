@@ -86,39 +86,30 @@ a:hover {
    the gap between the two sets rather than at the first card of the second
    set, and without correcting for it the row would jump by half a gap on
    every cycle. Change the gap and this has to change with it. */
+/* auto: the rail drifts on its own AND can be scrolled by hand. Those used to
+   be mutually exclusive — the drift was a transform on the track, so the rail
+   had to be overflow-x:hidden or the translated copy would have shown up as
+   scrollable width, and hidden meant nobody could scroll it themselves. The
+   drift now moves scrollLeft instead (see useMarqueeDrift in the Suggest
+   page), which is the same property a person scrolls, so the two compose
+   instead of fighting: scroll where you like, let go, and it carries on from
+   there.
+
+   overflow-y stays visible because the cards lift on hover; the shorthand
+   would set both axes and clip that. */
 .bb-marquee {
-  /* Only the horizontal axis needs hiding — that's what hides the duplicate
-     set sliding past the edge. `overflow: hidden` (the shorthand) sets both
-     axes at once, which silently clipped anything that overflowed
-     vertically too — the reduced-motion override below already only touches
-     overflow-x, which is what the intent always was. */
-  overflow-x: hidden;
+  overflow-x: auto;
   overflow-y: visible;
 }
 .bb-marquee-track {
   width: max-content;
-  animation: bb-marquee linear infinite;
 }
-/* These cards are links — pausing on hover is what makes them clickable
-   rather than a moving target. */
-.bb-marquee:hover .bb-marquee-track {
-  animation-play-state: paused;
-}
-@keyframes bb-marquee {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(calc(-50% - 8px));
-  }
-}
-/* The blanket reduced-motion rule below stops the animation, which would
-   otherwise strand the track on its first few cards with no way to reach the
-   rest. Fall back to an ordinary scroll rail and hide the duplicate set. */
+/* The blanket reduced-motion rule elsewhere can't reach a scrollLeft
+   animation, so useMarqueeDrift bows out on its own for those visitors. All
+   this has to do is hide the duplicate set, which exists only to give the
+   drift a seamless wrap — left visible with no drift it would read as every
+   brand listed twice. */
 @media (prefers-reduced-motion: reduce) {
-  .bb-marquee {
-    overflow-x: auto;
-  }
   .bb-marquee-track {
     width: auto;
   }
