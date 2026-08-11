@@ -254,7 +254,14 @@ export default function MapsPage() {
   // Leaflet needs no invalidateSize() when a pin is picked. It also means the
   // page reads as map + detail rather than map with something floating on top.
   return (
-    <section data-screen-label="Пин — газрын зураг" className="relative h-screen overflow-hidden bg-ink">
+    // h-dvh, not h-screen. On a phone `100vh` is the *large* viewport — the
+    // height the page would have with the URL bar retracted — so a locked,
+    // overflow-hidden screen measured in vh runs about 60-100px taller than
+    // what is actually on show, and the bottom of it (here: the pin sheet's
+    // Дэлгэрэнгүй / Google Map / Хаах row) sits permanently underneath the
+    // browser's own chrome with no way to scroll to it. dvh is the viewport
+    // as it currently is, so the page ends where the screen does.
+    <section data-screen-label="Пин — газрын зураг" className="relative h-dvh overflow-hidden bg-ink">
       {/* A flex row rather than percentage-positioned boxes: percentages here
           resolve against the full viewport, so they ignore the page's own 16px
           margins and the gutter between the two panes — the split drifted off
@@ -526,6 +533,98 @@ export default function MapsPage() {
                   <MapPin size={11} />Газрын зураг дээр гараар тэмдэглэх
                 </button>
               </div>
+            )}
+          </div>
+        )}
+
+        {/* ── the phone's own map controls ──────────────────────────────────
+            The desktop chrome above is four clusters pinned to the map's
+            corners, which is why all of it is behind !isMobile — at phone
+            width they would cover the map they are steering. The nav's
+            hamburger menu already carries the pieces that are really
+            navigation (pin mode, globe, reset), but two things that live only
+            out here had no mobile home at all: the category filters, and
+            near-me. Near-me mattered most — locating yourself is the one
+            control that is more use on a phone than on a desktop, and it was
+            the one device that couldn't reach it. */}
+        {V.isMobile && (V.showScenicFilters || V.showPlaceFilters) && (
+          // Along the top of the map as one swipeable row. Wrapping instead
+          // would let fourteen categories grow into a block deep enough to
+          // bury the map; a rail stays one chip tall however many there are.
+          <div className="bb-hscroll absolute inset-x-0 top-2 z-20 flex gap-1.5 overflow-x-auto px-2 pb-1">
+            {(V.showScenicFilters ? V.scenicFilterOpts : V.placeFilterOpts).map((f: any) => (
+              <button
+                key={f.key}
+                onClick={f.pick}
+                aria-pressed={f.active}
+                className="flex flex-none cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-2 font-[inherit] text-[11px] font-bold shadow-[0_4px_14px_rgba(0,0,0,.35)] backdrop-blur-[8px] transition-all duration-200"
+                style={{
+                  borderColor: f.active ? 'var(--accent,#E8B84B)' : 'rgba(255,255,255,.16)',
+                  background: f.active ? 'var(--accent,#E8B84B)' : 'rgba(20,20,20,.82)',
+                  color: f.active ? '#132a1f' : 'rgba(242,237,227,.78)',
+                }}
+              >
+                <span>{f.label}</span>
+                <span className="inline-flex min-w-[18px] items-center justify-center rounded-full px-1 py-0.5 text-[9px] font-extrabold leading-none tabular-nums" style={{ background: f.active ? 'rgba(19,42,31,.16)' : 'rgba(255,255,255,.1)' }}>{f.count}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Stands down while a pin sheet is open — the sheet is anchored to
+            these same bottom corners and covers up to 64vh, so anything left
+            down here would simply be behind it. */}
+        {V.isMobile && !V.pinSel && (
+          <div className="absolute bottom-3 right-3 left-3 z-20 flex flex-col items-end gap-2">
+            {V.locationError && (
+              <div className="flex max-w-full flex-col items-end gap-1.5 rounded-xl border border-[rgba(240,138,138,.4)] bg-[rgba(20,20,20,.92)] px-3 py-2 text-right text-[11px] font-semibold text-[#f08a8a]">
+                {V.locationError}
+                <button onClick={V.togglePickLocation} className="flex cursor-pointer items-center gap-1 border-0 bg-transparent p-0 font-[inherit] text-[11px] font-bold text-[var(--accent,#E8B84B)]">
+                  <MapPin size={11} />Газрын зураг дээр гараар тэмдэглэх
+                </button>
+              </div>
+            )}
+            {V.nearMeActive ? (
+              // Full width rather than the desktop panel's fixed 380px, which
+              // is wider than most phones are.
+              <div className="flex w-full flex-col gap-2 rounded-2xl border border-[rgba(255,255,255,.16)] bg-[rgba(20,20,20,.9)] p-2.5 shadow-[0_4px_14px_rgba(0,0,0,.45)] backdrop-blur-[8px]">
+                <div className="flex items-center gap-2 px-0.5">
+                  <span className="flex flex-none items-center gap-1.5 text-xs font-bold text-[var(--accent,#E8B84B)]"><LocateFixed size={13} /> {V.nearCount} олдлоо</span>
+                  {V.myLocationManual ? (
+                    <span className="truncate text-[10.5px] font-semibold text-[rgba(242,237,227,.45)]">гараар</span>
+                  ) : V.myAccuracyLabel ? (
+                    <span className="truncate text-[10.5px] font-semibold tabular-nums text-[rgba(242,237,227,.45)]">{V.myAccuracyLabel}</span>
+                  ) : null}
+                  <button onClick={V.clearNearMe} aria-label="Хаах" className="ml-auto flex h-7 w-7 flex-none cursor-pointer items-center justify-center rounded-full border border-[rgba(255,255,255,.2)] bg-transparent text-[15px] leading-none text-[rgba(242,237,227,.7)]">×</button>
+                </div>
+                {/* Radii on their own scrolling row above the two actions, so
+                    neither has to shrink to fit the other on a narrow screen. */}
+                <div className="bb-hscroll flex gap-1.5 overflow-x-auto">
+                  {V.nearRadiusOpts.map((r: any, i: number) => (
+                    <button key={i} onClick={r.pick} className="flex-none cursor-pointer whitespace-nowrap rounded-full border px-3 py-1.5 font-[inherit] text-[11px] font-bold transition-all duration-200" style={{ borderColor: r.active ? 'var(--accent,#E8B84B)' : 'rgba(255,255,255,.2)', background: r.active ? 'var(--accent,#E8B84B)' : 'transparent', color: r.active ? '#132a1f' : 'rgba(242,237,227,.75)' }}>{r.label}</button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2 border-t border-[rgba(255,255,255,.1)] pt-2">
+                  <button onClick={V.requestMyLocation} disabled={V.locating} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-[rgba(255,255,255,.2)] bg-transparent py-2 font-[inherit] text-[11px] font-bold text-[rgba(242,237,227,.75)] disabled:cursor-wait disabled:opacity-60">
+                    <LocateFixed size={12} />{V.locating ? 'Хайж байна…' : 'Дахин'}
+                  </button>
+                  {/* The answer when "Дахин" keeps returning the same wrong
+                      place — an IP-derived fix doesn't move however often it
+                      is asked, and on a phone that is the common failure. */}
+                  <button onClick={V.togglePickLocation} className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-full border py-2 font-[inherit] text-[11px] font-bold" style={{ borderColor: V.pickingLocation ? 'var(--accent,#E8B84B)' : 'rgba(255,255,255,.2)', color: V.pickingLocation ? 'var(--accent,#E8B84B)' : 'rgba(242,237,227,.75)' }}>
+                    <MapPin size={12} />Гараар
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={V.requestMyLocation}
+                disabled={V.locating}
+                className="flex cursor-pointer items-center gap-2 whitespace-nowrap rounded-full border border-[rgba(255,255,255,.16)] bg-[rgba(20,20,20,.85)] px-4 py-3 font-[inherit] text-xs font-bold text-[rgba(242,237,227,.9)] shadow-[0_4px_14px_rgba(0,0,0,.45)] backdrop-blur-[8px] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <LocateFixed size={14} />
+                {V.locating ? 'Байршил тодорхойлж байна…' : 'Ойрхон газар олох'}
+              </button>
             )}
           </div>
         )}
