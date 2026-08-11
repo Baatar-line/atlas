@@ -130,19 +130,30 @@ function PinPanel({ V }: { V: any }) {
       <div className="flex flex-none flex-wrap items-center gap-x-2 gap-y-1">
         <span className="text-[19px] font-extrabold leading-[1.2] text-cream">{p.name}</span>
         <span className="text-[12px] text-[rgba(242,237,227,.5)]">{p.aimag}</span>
+        {/* Pushed to the far edge so it sits directly above the favourite
+            button, the panel's other round control — the two read as one
+            column of badges instead of two loose circles. Centred inside a
+            slot as wide as that button (w-8) rather than simply right-aligned:
+            the badge is the smaller circle, so matching right edges would
+            still leave their centres a few pixels apart. Rendered only when it
+            applies — as its own row it left a stray band of column gap under
+            the title whenever the pin had no badge to show. */}
+        {p.accShow === 'inline-flex' && (
+          <span className="ml-auto flex w-8 flex-none justify-center">
+            <span title="Тусгай хэрэгцээт хүнд ээлтэй" className="flex h-[22px] w-[22px] items-center justify-center rounded-full border border-[rgba(255,255,255,.26)] bg-[rgba(0,0,0,.5)] text-[#8fd6c6]"><Accessibility size={12} /></span>
+          </span>
+        )}
       </div>
-      {/* Rendered only when it applies, rather than a always-present row with
-          the badge hidden inside it — an empty row still takes the column's
-          gap and left a stray space under the title. */}
-      {p.accShow === 'inline-flex' && (
-        <span title="Тусгай хэрэгцээт хүнд ээлтэй" className="flex h-[22px] w-[22px] flex-none self-start items-center justify-center rounded-full border border-[rgba(255,255,255,.26)] bg-[rgba(0,0,0,.5)] text-[#8fd6c6]"><Accessibility size={12} /></span>
-      )}
 
       {/* Rendered whether or not the pin can be rated, because the favourite
           button lives here now — gating the whole section on ratingKey would
           take the heart with it for pins that have no db id to rate. */}
       <Section title="Үнэлгээ">
-        <div className="flex items-start gap-3">
+        {/* Centred, not top-aligned: the heart is the row's other half, and
+            pinned to the top it hung above the score instead of reading as
+            level with it — and if the rating wraps to two lines it stays
+            centred against the pair rather than climbing to the first. */}
+        <div className="flex items-center gap-3">
           <div className="min-w-0 flex-1">
             {p.ratingKey
               ? <PinRating V={V} targetKey={p.ratingKey} />
@@ -190,25 +201,35 @@ function PinPanel({ V }: { V: any }) {
       {/* Both rows pushed to the bottom together via mt-auto on the wrapper —
           putting it on just the last row would leave the detail button
           floating in the middle whenever the content above is short. */}
-      <div className="mt-auto flex flex-none flex-col gap-2 pt-3">
+      {/* All three on one row at one width: flex-1 with basis-0 on each, so
+          the row is divided evenly rather than by how long each label
+          happens to be. Three buttons of three different widths read as
+          three different kinds of thing; here they are one set of choices,
+          and only the colour should say which is which.
+
+          Equal thirds is a tight budget — about 109px each in the rail's
+          usual width — so the labels are cut to fit it rather than left to
+          overflow: no arrow after Дэлгэрэнгүй (the accent fill already says
+          it is the action), and "Google Map" instead of the full
+          "Google Map-аар харах", which is kept as the title. The shared
+          L.openMaps stays long for the detail pages, where it has the room.
+
+          Matching radius and vertical padding across all three, since side
+          by side any difference in either reads as a mistake. */}
+      <div className="mt-auto flex flex-none items-center gap-1.5 pt-3">
         {/* p.openDetail is unset for pins with nothing to open — synthetic
             near-me-scatter points and the like (see pinDetailOpen in
             BigBangLayout) — so the button only renders where a real detail
             page exists behind it, rather than linking to nowhere. */}
         {p.openDetail && (
-          <button onClick={p.openDetail} className="flex-none cursor-pointer rounded-[11px] border border-[var(--accent,#E8B84B)] bg-[var(--accent,#E8B84B)] px-3.5 py-2.5 font-[inherit] text-xs font-bold text-[#132a1f] transition-all duration-200 hover:opacity-85">
-            {V.L.detail} →
+          <button onClick={p.openDetail} title={V.L.detail} className="min-w-0 flex-1 basis-0 cursor-pointer truncate rounded-[11px] border border-[var(--accent,#E8B84B)] bg-[var(--accent,#E8B84B)] px-2.5 py-2.5 text-center font-[inherit] text-[11.5px] font-bold text-[#132a1f] transition-all duration-200 hover:opacity-85">
+            {V.L.detail}
           </button>
         )}
-        {/* The maps link takes whatever width is left and Хаах stays at its
-            own label's width. Matching radius and vertical padding on both,
-            since side by side any difference in either reads as a mistake. */}
-        <div className="flex items-center gap-2">
-          <a href={p.mapUrl} target="_blank" rel="noopener" className="box-border flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-[11px] border border-[rgba(66,133,244,.4)] bg-[rgba(66,133,244,.14)] px-3.5 py-2.5 font-[inherit] text-xs font-bold text-[#8ab4f8] no-underline transition-all duration-200 hover:bg-[rgba(66,133,244,.22)]">
-            <MapPin size={14} className="flex-none" /><span className="truncate">{V.L.openMaps}</span><span className="ml-auto flex-none opacity-70">→</span>
-          </a>
-          <button onClick={V.closePin} className="flex-none cursor-pointer rounded-[11px] border border-[rgba(242,237,227,.25)] bg-transparent px-4 py-2.5 font-[inherit] text-xs font-bold text-[rgba(242,237,227,.75)] transition-all duration-250 hover:border-[var(--accent,#E8B84B)] hover:text-[var(--accent,#E8B84B)]">{V.L.close}</button>
-        </div>
+        <a href={p.mapUrl} target="_blank" rel="noopener" title={V.L.openMaps} className="box-border flex min-w-0 flex-1 basis-0 cursor-pointer items-center justify-center gap-1.5 rounded-[11px] border border-[rgba(66,133,244,.4)] bg-[rgba(66,133,244,.14)] px-2.5 py-2.5 font-[inherit] text-[11.5px] font-bold text-[#8ab4f8] no-underline transition-all duration-200 hover:bg-[rgba(66,133,244,.22)]">
+          <MapPin size={13} className="flex-none" /><span className="truncate">Google Map</span>
+        </a>
+        <button onClick={V.closePin} className="min-w-0 flex-1 basis-0 cursor-pointer truncate rounded-[11px] border border-[rgba(242,237,227,.25)] bg-transparent px-2.5 py-2.5 text-center font-[inherit] text-[11.5px] font-bold text-[rgba(242,237,227,.75)] transition-all duration-250 hover:border-[var(--accent,#E8B84B)] hover:text-[var(--accent,#E8B84B)]">{V.L.close}</button>
       </div>
     </div>
   );
