@@ -203,6 +203,49 @@ function IdeaPanel({ kind, activeSub }: { kind: CreateKind; activeSub: string })
   );
 }
 
+// Dark dropdown rows — the native option list ignores the input's own
+// colours and paints white-on-white without this.
+const OPT_STYLE = { background: '#1a1712', color: '#f2ede3' };
+
+// 24-hour time, as two selects rather than <input type="time">.
+//
+// A native time input renders 12-hour with an AM/PM column whenever the
+// browser's locale says so, and no attribute, CSS rule or value format
+// overrides that — the control's display belongs to the browser, not to the
+// page. Which meant the same form showed AM/PM to one visitor and 24-hour to
+// the next, on a site whose every other time is written 24-hour. Two selects
+// are the only way to make it the same for everyone.
+//
+// Hours run 00–23 and minutes 00–59, the actual 24-hour clock. There is no
+// 24:00 option: a place open "until 24:00" closes at 00:00, and for events
+// the value is parsed back into a Date, where 24:00 is not a time at all.
+//
+// The value stays an "HH:MM" string — exactly what the native input produced
+// — so validation, the API and the hours line on a place card are untouched.
+function TimeField({ value, onChange, className }: { value: string; onChange: (v: string) => void; className: string }) {
+  const [h = '', m = ''] = (value || '').split(':');
+  // Picking an hour fills the minutes in at :00 rather than leaving a
+  // half-set value the form would reject — "14" alone isn't a time anyone
+  // means to enter, and making them touch a second select to say "o'clock"
+  // is the kind of friction the native control didn't have.
+  const setH = (nh: string) => onChange(nh ? `${nh}:${m || '00'}` : '');
+  const setM = (nm: string) => onChange(nm ? `${h || '00'}:${nm}` : h ? `${h}:00` : '');
+  const pad = (n: number) => Array.from({ length: n }, (_, i) => String(i).padStart(2, '0'));
+  return (
+    <div className="flex items-center gap-1.5">
+      <select value={h} onChange={(e) => setH(e.target.value)} aria-label="Цаг" className={`min-w-0 flex-1 ${className}`}>
+        <option value="" style={OPT_STYLE}>--</option>
+        {pad(24).map((o) => <option key={o} value={o} style={OPT_STYLE}>{o}</option>)}
+      </select>
+      <span aria-hidden className="flex-none text-[13px] font-bold text-[rgba(242,237,227,.45)]">:</span>
+      <select value={m} onChange={(e) => setM(e.target.value)} aria-label="Минут" className={`min-w-0 flex-1 ${className}`}>
+        <option value="" style={OPT_STYLE}>--</option>
+        {pad(60).map((o) => <option key={o} value={o} style={OPT_STYLE}>{o}</option>)}
+      </select>
+    </div>
+  );
+}
+
 const TITLES: Record<CreateKind, string> = {
   place: 'Газар нэмэх',
   scenic: 'Үзэсгэлэнт газар нэмэх',
@@ -658,11 +701,11 @@ export default function CreateForm({ kind, mode = 'create', initial, lockedConta
               <div className={`grid gap-3 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
                 <label className="flex flex-col gap-1.5">
                   <span className={labelSpanClass}>Нээх цаг <span className="text-[#f08a8a]">*</span></span>
-                  <input type="time" value={openTime} onChange={(e) => setOpenTime(e.target.value)} onClick={(e) => e.currentTarget.showPicker?.()} className={`${smallInputClass} ${smallInputFontClass} [color-scheme:dark]`} />
+                  <TimeField value={openTime} onChange={setOpenTime} className={`${smallInputClass} ${smallInputFontClass}`} />
                 </label>
                 <label className="flex flex-col gap-1.5">
                   <span className={labelSpanClass}>Хаах цаг <span className="text-[#f08a8a]">*</span></span>
-                  <input type="time" value={closeTime} onChange={(e) => setCloseTime(e.target.value)} onClick={(e) => e.currentTarget.showPicker?.()} className={`${smallInputClass} ${smallInputFontClass} [color-scheme:dark]`} />
+                  <TimeField value={closeTime} onChange={setCloseTime} className={`${smallInputClass} ${smallInputFontClass}`} />
                 </label>
               </div>
             </>
@@ -694,7 +737,7 @@ export default function CreateForm({ kind, mode = 'create', initial, lockedConta
                 </label>
                 <label className="flex flex-col gap-1.5">
                   <span className={labelSpanClass}>Цаг <span className="text-[#f08a8a]">*</span></span>
-                  <input type="time" value={time} onChange={(e) => setTime(e.target.value)} onClick={(e) => e.currentTarget.showPicker?.()} className={`${smallInputClass} ${smallInputFontClass} [color-scheme:dark]`} />
+                  <TimeField value={time} onChange={setTime} className={`${smallInputClass} ${smallInputFontClass}`} />
                 </label>
                 <label className="flex flex-col gap-1.5">
                   <span className={labelSpanClass}>Дээд тал (хүн) <span className="text-[#f08a8a]">*</span></span>
