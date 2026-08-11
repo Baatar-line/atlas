@@ -1,17 +1,38 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
 import { requireAuth, jsonError } from '../../../lib/auth-helpers';
+import { SITES as HERITAGE_SITES, heritageImages } from '../../../scripts/sync-mongolia-heritage-pins';
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const aimagId = searchParams.get('aimagId');
+    const includeCatalog = searchParams.get('catalog') === '1' && !aimagId;
     const pins = await prisma.scenicPin.findMany({
       where: aimagId ? { aimagId: Number(aimagId) } : undefined,
       include: { aimag: true },
       orderBy: { createdAt: 'desc' },
     });
-    return NextResponse.json(pins);
+    // The researched national catalogue is code-backed, not 60+ database
+    // rows. This keeps admin CRUD clean and avoids a large table/rating fanout;
+    // the map still receives DB pins + catalogue in one cacheable request.
+    const catalogue = includeCatalog ? HERITAGE_SITES.map((p) => ({
+      name: p.name,
+      type: p.type,
+      description: p.description,
+      images: heritageImages(p),
+      imageSource: 'Wikimedia Commons',
+      aimag: { name: p.aimag },
+      lat: p.lat,
+      lng: p.lng,
+      googleMapUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.mapQuery || `${p.lat},${p.lng}`)}`,
+      catalog: true,
+    })) : [];
+    return NextResponse.json([...pins, ...catalogue], {
+      headers: includeCatalog
+        ? { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=3600' }
+        : undefined,
+    });
   } catch (err) {
     return jsonError(err);
   }

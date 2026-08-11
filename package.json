@@ -21,6 +21,7 @@
     "repair:country-sites": "bun run prisma/repair-country-sites.ts",
     "repair:globe-quality": "bun run prisma/repair-globe-quality.ts",
     "sync:country-coordinates": "bun run prisma/sync-country-site-coordinates.ts"
+    ,"sync:heritage-pins": "bun run scripts/sync-mongolia-heritage-pins.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
