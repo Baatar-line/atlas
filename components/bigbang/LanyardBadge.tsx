@@ -369,7 +369,12 @@ export default function LanyardBadge({ letter = 'b', large = false, name, role, 
     render();
     card.addEventListener('pointerdown', onPointerDown);
     window.addEventListener('pointermove', onPointerMove);
-    window.addEventListener('pointermove', onProximityMove);
+    // Capture is important on the mobile About layout: the cards sit over
+    // several full-width sections whose own gesture handlers may stop a
+    // bubbling pointermove. Seeing the move on the way down keeps the
+    // brush-past reaction working with a mouse in responsive preview and
+    // with a finger/stylus on a real phone.
+    window.addEventListener('pointermove', onProximityMove, { capture: true, passive: true });
     window.addEventListener('pointerup', onPointerUp);
     return () => {
       window.removeEventListener('resize', syncAnchor);
@@ -378,7 +383,7 @@ export default function LanyardBadge({ letter = 'b', large = false, name, role, 
       syncAnchorRef.current = null;
       card.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('pointermove', onPointerMove);
-      window.removeEventListener('pointermove', onProximityMove);
+      window.removeEventListener('pointermove', onProximityMove, { capture: true } as EventListenerOptions);
       window.removeEventListener('pointerup', onPointerUp);
       if (rafId != null) cancelAnimationFrame(rafId);
       const idx = registry.indexOf(myEntry);

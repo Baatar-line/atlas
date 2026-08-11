@@ -169,11 +169,26 @@ export default function AboutPage() {
               to ~1px and the next section would render right through the
               hanging cards. min-height reserves roughly ring + cord + card
               so the page below doesn't overlap them. */}
-          <div className="flex min-h-[300px] flex-wrap items-start justify-center gap-8 pt-2">
-            {V.team.map((tm: any, i: number) => (
-              <LanyardBadge key={i} large letter={tm.initial} name={tm.name} role={tm.role} color={tm.avatarBg} img={tm.img} />
-            ))}
-          </div>
+          {V.isMobile ? (
+            // Keep the real cord + Verlet swing physics on phones, but give
+            // every fixed-position badge a tall in-flow grid cell of its own.
+            // The anchor at the top of each cell now has ~260px reserved below
+            // it (cord + card), so rows and the following section cannot stack
+            // through the hanging cards as they did in the one-pixel flex row.
+            <div className="grid grid-cols-2 gap-x-3 gap-y-4 pt-2">
+              {V.team.map((tm: any, i: number) => (
+                <div key={i} className="flex h-[260px] min-w-0 justify-center pt-1">
+                  <LanyardBadge large letter={tm.initial} name={tm.name} role={tm.role} color={tm.avatarBg} img={tm.img} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex min-h-[300px] flex-wrap items-start justify-center gap-8 pt-2">
+              {V.team.map((tm: any, i: number) => (
+                <LanyardBadge key={i} large letter={tm.initial} name={tm.name} role={tm.role} color={tm.avatarBg} img={tm.img} />
+              ))}
+            </div>
+          )}
         </div>
 
       {/* Same column width as the sections above — the map SVG is width:100%
