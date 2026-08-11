@@ -260,6 +260,47 @@ const EDIT_TITLES: Record<CreateKind, string> = {
 const SCENIC_ICONS = ['🏔️', '🏞️', '🌄', '⛺', '🌅', '🏝️', '🎭', '🌲', '⛰️', '🏛️', '🌌', '🎯'];
 const MAX_IMAGES = 4;
 
+// ── Demo fill ───────────────────────────────────────────────────────────────
+// One click puts a ready-made listing into every typed field, so the create
+// flow can be walked through (or shown to someone) without writing one out by
+// hand each time. Photos are the deliberate exception: they are the one part
+// worth choosing yourself, and a generated placeholder in the gallery would
+// have to be spotted and removed before it reached a real listing.
+interface DemoFill {
+  name: string; desc: string; aimag: string; lat: number; lng: number;
+  phone: string; phone2: string; instagram: string; facebook: string; email: string;
+  catSlug?: string; sub?: string; openTime?: string; closeTime?: string;
+  scenicType?: string; icon?: string; time?: string; max?: string;
+}
+
+const DEMO: Record<CreateKind, DemoFill> = {
+  place: {
+    name: 'Демо — Sky Lounge 21',
+    desc: 'Хотын төвийн 21 давхарт байрлах, Улаанбаатарын панораман харагдацтай лоунж. Амьд хөгжим, гар хийцийн коктейль, тайван буланд хоёулаа сууж ярилцах орон зай.',
+    aimag: 'Улаанбаатар', lat: 47.9187, lng: 106.9176,
+    phone: '99112233', phone2: '', instagram: 'instagram.com/demo.skylounge21',
+    facebook: 'facebook.com/demo.skylounge21', email: 'demo@bolzoo.mn',
+    catSlug: 'food', sub: 'Лоунж', openTime: '12:00', closeTime: '23:00',
+  },
+  scenic: {
+    // Scenic pins have no contact block at all, so those stay empty rather
+    // than carrying values no field would ever show.
+    name: 'Демо — Тэрэлжийн нар жаргах цэг',
+    desc: 'Горхи-Тэрэлжийн хаднаас цааш үргэлжлэх задгай талбай. Нар жаргах цагаар хөндий бүхэлдээ алтан өнгөтэй болдог — гэрэл зураг авах, чимээгүй суухад тохиромжтой.',
+    aimag: 'Төв', lat: 47.988, lng: 107.42,
+    phone: '', phone2: '', instagram: '', facebook: '', email: '',
+    scenicType: 'Нар жаргах цэг', icon: '🌄',
+  },
+  event: {
+    name: 'Демо — Шөнийн одон ажиглалт',
+    desc: 'Хотын гэрлээс хол гарч, дурангаар од ажиглах шөнийн цуглаан. Дулаан хувцас, дэвсгэр аваарай — халуун цай талбай дээр байх болно.',
+    aimag: 'Улаанбаатар', lat: 47.9187, lng: 106.9176,
+    phone: '99112233', phone2: '88112233', instagram: 'instagram.com/demo.bolzoo',
+    facebook: 'facebook.com/demo.bolzoo', email: '',
+    time: '19:00', max: '20',
+  },
+};
+
 // Sits under the input rather than beside the label (which is where
 // CompleteProfileForm puts its own version): these fields are laid out two to
 // a row here, and a note long enough to wrap the label onto a second line
@@ -579,6 +620,52 @@ export default function CreateForm({ kind, mode = 'create', initial, lockedConta
     (kind === 'place' && (placeContactInvalid || placeHoursMissing)) ||
     (kind === 'event' && (eventMissing || eventContactInvalid))
   );
+
+  // Writes DEMO[kind] into every field at once (see the table above). Locked
+  // contact fields are stepped over rather than overwritten — they hold the
+  // account's own OTP-verified phone/email, which the demo has no business
+  // replacing with a made-up one, and the inputs are disabled anyway.
+  const fillDemo = () => {
+    if (submitting) return;
+    const d = DEMO[kind];
+    setName(d.name);
+    setDesc(d.desc);
+    setAimag(d.aimag);
+    if (!lockedPhone) setPhone(d.phone);
+    if (!lockedEmail) setContactEmail(d.email);
+    setPhone2(d.phone2);
+    setInstagram(d.instagram);
+    setFacebook(d.facebook);
+    if (d.catSlug) {
+      const c = CATS.find((x) => x.slug === d.catSlug) || CATS[0];
+      setCatSlug(c.slug);
+      setSub(d.sub && c.subs.includes(d.sub) ? d.sub : c.subs[0]);
+    }
+    if (d.openTime) setOpenTime(d.openTime);
+    if (d.closeTime) setCloseTime(d.closeTime);
+    if (d.scenicType) setScenicType(d.scenicType);
+    if (d.icon) setIcon(d.icon);
+    if (kind === 'event') {
+      // A week out, built from the local calendar rather than toISOString —
+      // in UB (UTC+8) the ISO date is still yesterday's until 08:00, and the
+      // date input reads its value as a local day.
+      const when = new Date();
+      when.setDate(when.getDate() + 7);
+      const p2 = (n: number) => String(n).padStart(2, '0');
+      setDate(`${when.getFullYear()}-${p2(when.getMonth() + 1)}-${p2(when.getDate())}`);
+      setTime(d.time || '19:00');
+      setMax(d.max || '20');
+    }
+    // Photos are left untouched on purpose (see the DEMO table) — whatever
+    // has already been picked stays, and the gallery is the one thing still
+    // to fill in afterwards.
+    //
+    // The search box is deliberately left alone too: writing the name into it
+    // would set the debounced geocode lookup running and drop a suggestion
+    // list over the map, on top of a pin that is already exactly right.
+    applyLocation(d.lat, d.lng, 14);
+    setErr(false);
+  };
 
   const submit = async () => {
     if (submitting) return;
@@ -904,6 +991,14 @@ export default function CreateForm({ kind, mode = 'create', initial, lockedConta
 
           <div className="mt-1 flex items-center gap-3">
             <button onClick={submit} disabled={submitting || !formValid} title={!submitting && !formValid ? 'Бүх заавал талбарыг бөглөнө үү' : undefined} className="cursor-pointer rounded-full border-none bg-[var(--accent,#E8B84B)] px-7 py-[11px] font-[inherit] text-[13px] font-extrabold text-[#132a1f] transition-transform duration-200 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:translate-y-0">{submitting ? 'Хадгалж байна…' : mode === 'edit' ? 'Хадгалах' : 'Үүсгэх →'}</button>
+            {/* Create only. In edit mode the fields hold a real row someone is
+                part-way through changing, and a button that overwrites it with
+                sample data is a foot-gun rather than a shortcut. Outlined in
+                the accent colour so it reads as a sibling of "Үүсгэх" without
+                competing with it for the primary action. */}
+            {mode === 'create' && (
+              <button onClick={fillDemo} disabled={submitting} title="Бүх талбарыг бэлэн жишээ өгөгдлөөр бөглөнө — зургаа өөрөө оруулна" className="cursor-pointer rounded-full border border-[rgba(232,184,75,.5)] bg-[rgba(232,184,75,.1)] px-5 py-2.5 font-[inherit] text-xs font-bold text-[var(--accent,#E8B84B)] transition-all duration-200 hover:bg-[rgba(232,184,75,.2)] disabled:cursor-not-allowed disabled:opacity-60">Демо</button>
+            )}
             <button onClick={onClose} disabled={submitting} className="cursor-pointer rounded-full border border-[rgba(242,237,227,.25)] bg-transparent px-5 py-2.5 font-[inherit] text-xs font-bold text-[rgba(242,237,227,.7)] disabled:cursor-not-allowed disabled:opacity-60">Болих</button>
             {err && (
               <span className="text-[11.5px] font-bold text-[#f08a8a]">
