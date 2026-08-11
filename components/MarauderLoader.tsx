@@ -125,12 +125,30 @@ export default function MarauderLoader({ loop = true, onFinish, duration = 5000,
   const [cycle, setCycle] = useState(0);
 
   // measure the container and (re)build the trails; re-measure on resize / restart
+  //
+  // The size guard is load-bearing, not an optimisation. `feet` is the drive
+  // effect's dependency, so handing it a new array restarts the run from 0% —
+  // progress resets, `finished` goes back to false, and the pin that had
+  // already landed blinks out of existence (its body is opacity:0 until the
+  // drop animation puts it back). ResizeObserver fires once on observe() and
+  // again on any sub-pixel settle, a scrollbar appearing, or mobile browser
+  // chrome sliding away, so "fired but nothing changed" is the normal case —
+  // and every one of those was throwing the loader back to the start.
+  const lastDims = useRef({ w: -1, h: -1 });
+  // Set the moment the run hits 100%; read by both effects below.
+  const doneRef = useRef(false);
   useLayoutEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
+    // A loop restart wants a genuine rebuild even at an unchanged size, and
+    // it is the one thing that may legitimately rewind a finished run.
+    lastDims.current = { w: -1, h: -1 };
+    doneRef.current = false;
     const measure = () => {
       const w = el.clientWidth || window.innerWidth;
       const h = el.clientHeight || window.innerHeight;
+      if (lastDims.current.w === w && lastDims.current.h === h) return;
+      lastDims.current = { w, h };
       setDims({ w, h });
       setFeet(buildTrails(w, h));
     };
@@ -143,6 +161,12 @@ export default function MarauderLoader({ loop = true, onFinish, duration = 5000,
   // drive the 0-100% animation whenever the trails are (re)built
   useEffect(() => {
     if (!feet.length) return;
+    // A real resize (window drag, phone rotation) still rebuilds the trails
+    // so the footprints suit the new shape — but once the run has reached
+    // 100% that must not rewind it. Replaying the walk under a visitor who
+    // is only waiting for the site, and blinking the landed pin out to do
+    // it, is worse than footprints that were laid out for the old size.
+    if (doneRef.current) return;
     setProgress(0);
     setFinished(false);
     setFading(false);
@@ -157,6 +181,7 @@ export default function MarauderLoader({ loop = true, onFinish, duration = 5000,
         raf = requestAnimationFrame(frame);
       } else {
         setFinished(true);
+        doneRef.current = true;
         // Wait for the pin to actually land (ml-pindrop is .72s) before handing
         // off to the caller — calling onFinish right at 100% used to swap the
         // real site in the same instant the pin started dropping, so the drop
@@ -276,10 +301,39 @@ const CSS = `
 @keyframes ml-bloom{ 0%{opacity:0; transform:scale(.2);} 22%{opacity:.85;} 100%{opacity:0; transform:scale(3.2);} }
 
 .mloader__pin{ position:absolute; z-index:5; left:50%; top:50%; transform:translate(-50%,-100%); pointer-events:none; }
-.mloader__pin svg{ width:clamp(24px,6vw,34px); display:block; filter:drop-shadow(0 0 7px rgba(232, 184, 75,.55)) drop-shadow(0 2px 4px rgba(0,0,0,.5)); }
+/* overflow:visible because an <svg> clips to its own viewBox by default, and
+   the pin's crown sits at y=1 of a 0-34 box — one unit of headroom. Anything
+   that lifts the body (the float below, and the drop's -52px entrance before
+   it) pushed the top of the pin straight through that edge and had it
+   sheared flat. Cheaper than padding the viewBox, which would have meant
+   re-centring the path and re-tuning every offset that depends on it. */
+.mloader__pin svg{ width:clamp(24px,6vw,34px); display:block; overflow:visible; filter:drop-shadow(0 0 7px rgba(232, 184, 75,.55)) drop-shadow(0 2px 4px rgba(0,0,0,.5)); }
 .mloader__pin .body{ opacity:0; transform:translateY(-52px) scale(.6); transform-origin:bottom center; }
-.mloader__pin.drop .body{ animation:ml-pindrop .72s cubic-bezier(.34,1.5,.5,1) forwards; }
+/* Two animations on one property, and the order is the whole trick: the float
+   is listed second, so once its .72s delay is up it wins the transform from
+   the drop's forwards fill and takes over exactly where the pin landed.
+   During the delay it contributes nothing (no fill-mode), leaving the drop
+   to play clean.
+
+   The point of it is honesty about state. The site is often still loading
+   after the trails have met — up to the 15s ceiling in AppShell — and a
+   frozen pin over a frozen background looks like a page that has given up.
+   A pin still breathing says the wait is intentional. */
+.mloader__pin.drop .body{ animation:ml-pindrop .72s cubic-bezier(.34,1.5,.5,1) forwards, ml-pinfloat 2.6s ease-in-out .72s infinite; }
 @keyframes ml-pindrop{ 0%{opacity:0; transform:translateY(-52px) scale(.6);} 55%{opacity:1;} 100%{opacity:1; transform:translateY(0) scale(1);} }
+@keyframes ml-pinfloat{ 0%,100%{ transform:translateY(0) scale(1); } 50%{ transform:translateY(-7px) scale(1); } }
+/* The ground mark the pin floats above. Without it the rise reads as the pin
+   sliding up the screen rather than lifting off a surface, and it gives the
+   loop a second, quieter beat — tightest when the pin is highest. */
+.mloader__pin::after{
+  content:""; position:absolute; left:50%; bottom:-5px; width:14px; height:4px; margin-left:-7px;
+  border-radius:50%; background:rgba(0,0,0,.55); filter:blur(2px); opacity:0;
+}
+.mloader__pin.drop::after{ animation:ml-pinshadow 2.6s ease-in-out .72s infinite; }
+@keyframes ml-pinshadow{
+  0%,100%{ opacity:.5; transform:scale(1); }
+  50%{ opacity:.28; transform:scale(.72); }
+}
 
 .mloader__oath{
   position:absolute; z-index:4; font-size:clamp(15px,3.6vw,22px);
@@ -297,7 +351,12 @@ const CSS = `
 .mloader__pct.gone{ opacity:0; }
 
 @media (prefers-reduced-motion:reduce){
-  .mloader__foot.on,.mloader__bloom.go,.mloader__pin.drop .body{ animation-duration:.01s; }
+  .mloader__foot.on,.mloader__bloom.go{ animation-duration:.01s; }
+  /* Respelled rather than given a duration, because the pin now carries two
+     animations and shortening both would turn the infinite float into a
+     10ms strobe — the opposite of what reduced motion is asking for. */
+  .mloader__pin.drop .body{ animation:ml-pindrop .01s forwards; }
+  .mloader__pin.drop::after{ animation:none; opacity:.5; }
   .mloader::after{ animation:none; }
 }
 `;
