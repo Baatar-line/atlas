@@ -245,7 +245,27 @@ export default function MapsPage() {
             controls below can be positioned against the map's edges without
             being appended into the element Leaflet manages. */}
         <div className="relative min-w-0 flex-[8]">
-          <div ref={V.mainMapRef} className="absolute inset-0 isolate overflow-hidden rounded-[18px] bg-[#1a2534]"></div>
+          {/* The crosshair has to beat Leaflet's own .leaflet-grab /
+              .leaflet-interactive cursors, which sit on the very same
+              elements at the same specificity — hence the important
+              modifier and the descendant rule for the aimag polygons. */}
+          <div
+            ref={V.mainMapRef}
+            className={`absolute inset-0 isolate overflow-hidden rounded-[18px] bg-[#1a2534] ${V.pickingLocation ? '!cursor-crosshair [&_.leaflet-interactive]:!cursor-crosshair' : ''}`}
+          ></div>
+
+          {/* Only while placing. Centred over the map rather than tucked in
+              the panel: the instruction is about the map, and the click it
+              asks for happens anywhere out here. */}
+          {V.pickingLocation && (
+            <div className="pointer-events-none absolute inset-x-0 top-16 z-30 flex justify-center">
+              <div className="pointer-events-auto flex items-center gap-2.5 rounded-full border border-[var(--accent,#E8B84B)] bg-[rgba(20,20,20,.9)] px-4 py-2 text-[11.5px] font-bold text-[var(--accent,#E8B84B)] shadow-[0_4px_18px_rgba(0,0,0,.5)] backdrop-blur-[8px]">
+                <MapPin size={13} className="flex-none" />
+                Байгаа газраа газрын зураг дээр дарна уу
+                <button onClick={V.togglePickLocation} className="cursor-pointer border-0 bg-transparent p-0 font-[inherit] text-[11px] font-bold text-[rgba(242,237,227,.6)] hover:text-cream">Болих ×</button>
+              </div>
+            </div>
+          )}
 
         {!V.isMobile && (
           <div className="absolute left-4 top-4 z-20 flex flex-col items-start gap-2">
@@ -359,48 +379,133 @@ export default function MapsPage() {
               <div className="relative inline-grid grid-cols-3 rounded-full border border-[rgba(255,255,255,.16)] bg-[rgba(20,20,20,.72)] p-[3px] shadow-[0_4px_14px_rgba(0,0,0,.35)] backdrop-blur-[8px]">
                 <div className="absolute top-[3px] bottom-[3px] left-[3px] w-[calc((100%-6px)/3)] rounded-full transition-transform duration-300 ease-[cubic-bezier(.34,1.4,.5,1)]" style={{ background: V.accent, transform: `translateX(${V.pinPillShift})` }}></div>
                 {V.pinModeOpts.map((m: any, i: number) => (
-                  <button key={i} onClick={m.pick} className="relative z-[2] cursor-pointer whitespace-nowrap border-none bg-transparent px-3.5 py-[5px] font-[inherit] text-[11.5px] font-bold transition-colors duration-250" style={{ color: m.color }}>{m.label}</button>
+                  <button key={i} onClick={m.pick} className="relative z-[2] flex cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap border-none bg-transparent px-3 py-[5px] font-[inherit] text-[11.5px] font-bold transition-colors duration-250" style={{ color: m.color }}>
+                    <span>{m.label}</span>
+                    <span
+                      aria-label={`${m.count} пин`}
+                      className="inline-flex min-w-[18px] items-center justify-center rounded-full px-1.5 py-0.5 text-[9px] font-extrabold leading-none tabular-nums"
+                      style={{ background: m.active ? 'rgba(19,42,31,.16)' : 'rgba(255,255,255,.12)', color: m.active ? '#132a1f' : 'rgba(255,255,255,.72)' }}
+                    >{m.count}</span>
+                  </button>
                 ))}
               </div>
             </div>
 
-            {/* Moved under the Үзэсгэлэнт/Газрууд/Эвент pill rather than the
-                map's left edge — both control what the map is showing, so
-                grouping them reads as one decision area instead of two
-                unrelated corners. */}
+            {V.showScenicFilters && (
+              <div className="flex flex-wrap justify-end gap-1.5">
+                {V.scenicFilterOpts.map((f: any) => (
+                  <button
+                    key={f.key}
+                    onClick={f.pick}
+                    title={f.active ? 'Бүх пинийг харуулах' : `${f.label} ангиллыг харуулах`}
+                    aria-pressed={f.active}
+                    className="flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1.5 font-[inherit] text-[10.5px] font-bold transition-all duration-200"
+                    style={{
+                      borderColor: f.active ? 'var(--accent,#E8B84B)' : 'rgba(255,255,255,.16)',
+                      background: f.active ? 'var(--accent,#E8B84B)' : 'rgba(52,52,52,.88)',
+                      color: f.active ? '#132a1f' : 'rgba(242,237,227,.78)',
+                    }}
+                  >
+                    <span>{f.label}</span>
+                    <span className="inline-flex min-w-[18px] items-center justify-center rounded-full px-1 py-0.5 text-[9px] font-extrabold leading-none tabular-nums" style={{ background: f.active ? 'rgba(19,42,31,.16)' : 'rgba(255,255,255,.1)' }}>{f.count}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {V.showPlaceFilters && (
+              <div className="flex flex-wrap justify-end gap-1.5">
+                {V.placeFilterOpts.map((f: any) => (
+                  <button
+                    key={f.key}
+                    onClick={f.pick}
+                    title={f.active ? 'Бүх газрыг харуулах' : `${f.label} ангиллыг харуулах`}
+                    aria-pressed={f.active}
+                    className="flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1.5 font-[inherit] text-[10.5px] font-bold transition-all duration-200"
+                    style={{
+                      borderColor: f.active ? 'var(--accent,#E8B84B)' : 'rgba(255,255,255,.16)',
+                      background: f.active ? 'var(--accent,#E8B84B)' : 'rgba(52,52,52,.88)',
+                      color: f.active ? '#132a1f' : 'rgba(242,237,227,.78)',
+                    }}
+                  >
+                    <span>{f.label}</span>
+                    <span className="inline-flex min-w-[18px] items-center justify-center rounded-full px-1 py-0.5 text-[9px] font-extrabold leading-none tabular-nums" style={{ background: f.active ? 'rgba(19,42,31,.16)' : 'rgba(255,255,255,.1)' }}>{f.count}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+          </div>
+        )}
+
+        {!V.isMobile && (
+          <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 flex-col items-center gap-2">
             {!V.nearMeActive ? (
               <button
                 onClick={V.requestMyLocation}
                 disabled={V.locating}
-                className="flex cursor-pointer items-center gap-2 whitespace-nowrap rounded-full border border-[rgba(255,255,255,.16)] bg-[rgba(20,20,20,.72)] px-3.5 py-1.5 font-[inherit] text-xs font-bold text-[rgba(242,237,227,.85)] shadow-[0_4px_14px_rgba(0,0,0,.35)] backdrop-blur-[8px] transition-all duration-250 hover:border-[var(--accent,#E8B84B)] hover:text-[var(--accent,#E8B84B)] disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex cursor-pointer items-center gap-2 whitespace-nowrap rounded-full border border-[rgba(255,255,255,.16)] bg-[rgba(20,20,20,.78)] px-4 py-2 font-[inherit] text-xs font-bold text-[rgba(242,237,227,.85)] shadow-[0_4px_14px_rgba(0,0,0,.45)] backdrop-blur-[8px] transition-all duration-250 hover:border-[var(--accent,#E8B84B)] hover:text-[var(--accent,#E8B84B)] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <LocateFixed size={13} />
                 {V.locating ? 'Байршил тодорхойлж байна…' : 'Ойрхон газар олох'}
               </button>
             ) : (
-              // Wide enough for all 5 radius pills on one row — at the old
-              // 240px they wrapped to two, which put 50/100км on a line of
-              // their own for no reason other than running out of width.
-              <div className="flex w-[360px] flex-col gap-2 rounded-2xl border border-[rgba(255,255,255,.16)] bg-[rgba(20,20,20,.78)] p-2.5 shadow-[0_4px_14px_rgba(0,0,0,.35)] backdrop-blur-[8px]">
+              <div className="flex w-[380px] flex-col gap-2 rounded-2xl border border-[rgba(255,255,255,.16)] bg-[rgba(20,20,20,.82)] p-2.5 shadow-[0_4px_14px_rgba(0,0,0,.45)] backdrop-blur-[8px]">
                 <div className="flex items-center justify-between gap-3 px-0.5">
                   <span className="flex items-center gap-1.5 text-xs font-bold text-[var(--accent,#E8B84B)]"><LocateFixed size={13} /> {V.nearCount} олдлоо</span>
-                  <button onClick={V.clearNearMe} className="cursor-pointer border-0 bg-transparent p-0 text-[11px] font-bold text-[rgba(242,237,227,.6)] hover:text-[var(--accent,#E8B84B)]">Хаах ×</button>
+                  {/* The browser's own margin of error, printed only when it's
+                      wide enough to put the marker somewhere you aren't — the
+                      map draws the same number as a circle. Without it a
+                      3km-off fix looks like the map being wrong. */}
+                  {V.myLocationManual ? (
+                    <span title="Та өөрөө тавьсан байршил" className="text-[10.5px] font-semibold text-[rgba(242,237,227,.45)]">гараар</span>
+                  ) : V.myAccuracyLabel ? (
+                    <span title="Хөтчийн мэдээлсэн байршлын нарийвчлал" className="text-[10.5px] font-semibold tabular-nums text-[rgba(242,237,227,.45)]">{V.myAccuracyLabel}</span>
+                  ) : null}
+                  <div className="ml-auto flex items-center gap-2.5">
+                    {/* Re-asking used to mean closing the panel and pressing
+                        the original button again, which reads as giving up on
+                        the feature rather than retrying it. */}
+                    <button
+                      onClick={V.requestMyLocation}
+                      disabled={V.locating}
+                      title="Байршлыг дахин тодорхойлох"
+                      className="flex cursor-pointer items-center gap-1 border-0 bg-transparent p-0 text-[11px] font-bold text-[rgba(242,237,227,.6)] hover:text-[var(--accent,#E8B84B)] disabled:cursor-wait disabled:opacity-60"
+                    >
+                      <LocateFixed size={11} />{V.locating ? 'Хайж байна…' : 'Дахин'}
+                    </button>
+                    {/* Sits beside "Дахин" because it is the answer when
+                        "Дахин" keeps returning the same wrong place — an IP
+                        fix doesn't move no matter how often it's asked. */}
+                    <button
+                      onClick={V.togglePickLocation}
+                      title="Байршлаа газрын зураг дээр өөрөө тэмдэглэх"
+                      className="flex cursor-pointer items-center gap-1 border-0 bg-transparent p-0 text-[11px] font-bold hover:text-[var(--accent,#E8B84B)]"
+                      style={{ color: V.pickingLocation ? 'var(--accent,#E8B84B)' : 'rgba(242,237,227,.6)' }}
+                    >
+                      <MapPin size={11} />Гараар
+                    </button>
+                    <button onClick={V.clearNearMe} className="cursor-pointer border-0 bg-transparent p-0 text-[11px] font-bold text-[rgba(242,237,227,.6)] hover:text-[var(--accent,#E8B84B)]">Хаах ×</button>
+                  </div>
                 </div>
                 <div className="flex flex-nowrap justify-end gap-1.5">
                   {V.nearRadiusOpts.map((r: any, i: number) => (
-                    <button
-                      key={i}
-                      onClick={r.pick}
-                      className="cursor-pointer whitespace-nowrap rounded-full border px-3 py-1 font-[inherit] text-[11px] font-bold transition-all duration-200"
-                      style={{ borderColor: r.active ? 'var(--accent,#E8B84B)' : 'rgba(255,255,255,.2)', background: r.active ? 'var(--accent,#E8B84B)' : 'transparent', color: r.active ? '#132a1f' : 'rgba(242,237,227,.75)' }}
-                    >
-                      {r.label}
-                    </button>
+                    <button key={i} onClick={r.pick} className="cursor-pointer whitespace-nowrap rounded-full border px-3 py-1 font-[inherit] text-[11px] font-bold transition-all duration-200" style={{ borderColor: r.active ? 'var(--accent,#E8B84B)' : 'rgba(255,255,255,.2)', background: r.active ? 'var(--accent,#E8B84B)' : 'transparent', color: r.active ? '#132a1f' : 'rgba(242,237,227,.75)' }}>{r.label}</button>
                   ))}
                 </div>
               </div>
             )}
-            {V.locationError && <div className="max-w-[220px] rounded-xl border border-[rgba(240,138,138,.4)] bg-[rgba(240,138,138,.1)] px-3 py-1.5 text-[11px] font-semibold text-[#f08a8a]">{V.locationError}</div>}
+            {/* A denied or failed lookup used to be a dead end. Placing the
+                point by hand needs no permission and no fix at all, so the
+                offer belongs right here in the failure. */}
+            {V.locationError && (
+              <div className="flex max-w-[260px] flex-col items-end gap-1.5 rounded-xl border border-[rgba(240,138,138,.4)] bg-[rgba(20,20,20,.88)] px-3 py-2 text-right text-[11px] font-semibold text-[#f08a8a]">
+                {V.locationError}
+                <button onClick={V.togglePickLocation} className="flex cursor-pointer items-center gap-1 border-0 bg-transparent p-0 font-[inherit] text-[11px] font-bold text-[var(--accent,#E8B84B)] hover:underline">
+                  <MapPin size={11} />Газрын зураг дээр гараар тэмдэглэх
+                </button>
+              </div>
+            )}
           </div>
         )}
 

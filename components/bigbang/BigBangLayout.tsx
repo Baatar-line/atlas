@@ -205,7 +205,7 @@ export default class BigBangLayout extends React.Component<Props, any> {
     // This session's own place submissions (pending/approved), fetched once
     // signed in — see fetchMyPlaces. Shown on the Profile page.
     myPlaces: [],
-    pinMode: 'scenic', heroHover: null,
+    pinMode: 'scenic', scenicFilter: 'all', placeFilter: 'all', heroHover: null,
     // "Ойрхон газар олох" — browser geolocation + radius filter on the Maps
     // page. `nearMeActive` is a separate mode from the usual aimag-click
     // pin view (see syncMainMap) rather than a filter layered on top of it,
@@ -325,7 +325,8 @@ export default class BigBangLayout extends React.Component<Props, any> {
       // NOT also tear down and rebuild every pin marker each time. Doing so
       // used to make the pins visibly flicker/jump during ordinary map use.
       const pinsChanged =
-        prevState.pinMode !== this.state.pinMode || prevState.mapAimag !== this.state.mapAimag ||
+        prevState.pinMode !== this.state.pinMode || prevState.scenicFilter !== this.state.scenicFilter ||
+        prevState.placeFilter !== this.state.placeFilter || prevState.mapAimag !== this.state.mapAimag ||
         prevState.pin !== this.state.pin || prevState.lang !== this.state.lang ||
         prevState.bigText !== this.state.bigText || prevState.livePlaces !== this.state.livePlaces ||
         prevState.liveEvents !== this.state.liveEvents || prevState.liveScenicPins !== this.state.liveScenicPins ||
@@ -461,8 +462,10 @@ export default class BigBangLayout extends React.Component<Props, any> {
   fetchLiveContent = () => {
     Promise.all([
       apiGet<any[]>('/places'),
-      apiGet<any[]>('/events'),
-      apiGet<any[]>('/scenic-pins'),
+      apiGet<any[]>('/events?catalog=1'),
+      // Versioned so a catalogue image-strategy change is visible immediately
+      // instead of waiting behind the public endpoint's CDN cache.
+      apiGet<any[]>('/scenic-pins?catalog=1&v=11'),
       apiGet<any[]>('/brands/active'),
     ]).then(([livePlaces, liveEvents, liveScenicPins, liveBrands]) => {
       // GET /events carries _count.attendees — flattened into its own id→count
@@ -704,7 +707,7 @@ export default class BigBangLayout extends React.Component<Props, any> {
       if (!node.isConnected) return;
       if (!window.L) { setTimeout(init, 150); return; }
       const m = window.L.map(node, {
-        attributionControl: false, zoomControl: !this.state.isMobile, minZoom: 3,
+        attributionControl: false, zoomControl: false, minZoom: 3,
         maxBounds: [[-90, -180], [90, 180]], maxBoundsViscosity: 1,
       });
       m.setView([46.8, 103.8], 5);
@@ -739,7 +742,6 @@ export default class BigBangLayout extends React.Component<Props, any> {
       this.addCountryBorder(m);
       // Bottom-right, away from the layer/hazard panels that run down the
       // left edge — the default top-left put it underneath them.
-      if (m.zoomControl) m.zoomControl.setPosition('bottomright');
       this._mainMap = m;
       setTimeout(() => m.invalidateSize(), 120);
       this.syncMainMap();
@@ -836,7 +838,13 @@ export default class BigBangLayout extends React.Component<Props, any> {
             .addTo(this._aimagPolyLayer);
           const bounds = layer.getBounds();
           const center = bounds.getCenter();
-          const label = window.L.marker(center, {
+          // Dornod is strongly concave with a long northern lobe, so the
+          // bounding-box midpoint pushes its label up against/outside the
+          // visible body. A hand-tuned point keeps the name and pin count in
+          // the broad central part of the aimag. Other aimags keep their
+          // geometry-derived center.
+          const labelCenter = id === 'Дорнод' ? window.L.latLng(48.05, 116.15) : center;
+          const label = window.L.marker(labelCenter, {
             icon: window.L.divIcon({ className: '', html: '', iconSize: [1, 1] }),
             interactive: false, opacity: 1,
           }).addTo(this._aimagLabelLayer);
@@ -1304,6 +1312,17 @@ export default class BigBangLayout extends React.Component<Props, any> {
     return result;
   }
 
+  scenicCategory(p: Pin): 'museum' | 'history' | 'artifact' | 'scenic' {
+    const text = `${p.name} ${p.type}`.toLowerCase();
+    if (text.includes('музей')) return 'museum';
+    if (text.includes('археологи') || text.includes('олдвор') || text.includes('үлэг') ||
+        text.includes('палеонтологи') || text.includes('хүннү') || text.includes('буган чулуу') ||
+        text.includes('хүн чулуун') || text.includes('хадны')) return 'artifact';
+    if (text.includes('түүх') || text.includes('1939') || text.includes('1945') ||
+        text.includes('тулалдаан') || text.includes('хувьсгал')) return 'history';
+    return 'scenic';
+  }
+
   mapPins(): any[] {
     const mode = this.state.pinMode || 'scenic';
     if (mode === 'places') {
@@ -1316,7 +1335,8 @@ export default class BigBangLayout extends React.Component<Props, any> {
       // which shows the whole listing rather than a teaser with a link to the
       // detail page. `desc` stays the short "subCategory · hours" meta line the
       // map marker labels already use; `description` is the real write-up.
-      this.liveCats().forEach((c) => c.items.forEach((it, idx) => out.push({
+      const placeFilter = this.state.placeFilter || 'all';
+      this.liveCats().filter((c) => placeFilter === 'all' || c.slug === placeFilter).forEach((c) => c.items.forEach((it, idx) => out.push({
         id: (it as any).id, name: it.name, type: it.sub || c.name, aimag: it.aimag || 'Улаанбаатар',
         img: it.img || '', images: (it as any).images || [], desc: it.meta, description: (it as any).desc || '',
         phone: (it as any).phone || '', cat: c.slug, idx,
@@ -1333,7 +1353,9 @@ export default class BigBangLayout extends React.Component<Props, any> {
         lat: ev.lat, lng: ev.lng,
       }));
     }
-    return this.allPins();
+    const scenic = this.allPins().map((p, originalIndex) => ({ ...p, _allIndex: originalIndex }));
+    const filter = this.state.scenicFilter || 'all';
+    return filter === 'all' ? scenic : scenic.filter((p) => this.scenicCategory(p) === filter);
   }
 
   // Great-circle distance in km — used only for the "ойрхон газар олох"
@@ -1595,6 +1617,16 @@ export default class BigBangLayout extends React.Component<Props, any> {
     const attendCounts = this.state.attendCounts || {};
     const toggleJoin = (eventId: number) => async (ev: any) => {
       if (ev && ev.stopPropagation) ev.stopPropagation();
+      // Negative IDs belong to the static demo catalogue. Keep their button
+      // interactive without creating fake EventAttendee rows in the database.
+      if (eventId < 0) {
+        const nowOn = !joined[eventId];
+        this.setState((s: any) => ({
+          joined: { ...s.joined, [eventId]: nowOn },
+          attendCounts: { ...s.attendCounts, [eventId]: Math.max(0, (s.attendCounts?.[eventId] ?? 0) + (nowOn ? 1 : -1)) },
+        }));
+        return;
+      }
       const session = getSession();
       if (!session) { this.setState({ showUserAuthForm: true }); return; }
       const nowOn = !joined[eventId];
@@ -1663,7 +1695,8 @@ export default class BigBangLayout extends React.Component<Props, any> {
     if (selP) {
       const mode = this.state.pinMode || 'scenic';
       if (mode === 'scenic' && selP.id != null) {
-        pinDetailOpen = () => this.openScenicDetail(pin);
+        const originalScenicIndex = selP._allIndex ?? pin;
+        pinDetailOpen = () => this.openScenicDetail(originalScenicIndex);
       } else if (mode === 'places' && selP.cat && selP.idx != null) {
         const catForPin = selP.cat; const idxForPin = selP.idx;
         pinDetailOpen = () => this.openPlace({ slug: catForPin }, idxForPin);
@@ -2125,7 +2158,37 @@ export default class BigBangLayout extends React.Component<Props, any> {
       heroAimagVert: aimag !== 'Бүгд' && lang === 'mn' ? AIMAG_MN_SCRIPT[aimag] || '' : '',
       pinModeOpts: ([['scenic', lang === 'en' ? 'Scenic' : 'Үзэсгэлэнт'], ['places', lang === 'en' ? 'Places' : 'Газрууд'], ['events', lang === 'en' ? 'Events' : 'Эвент']] as [string, string][]).map((m) => {
         const on = (this.state.pinMode || 'scenic') === m[0];
-        return { label: m[1], color: on ? '#132a1f' : 'rgba(255,255,255,.85)', pick: () => this.setState({ pinMode: m[0], pin: -1 }) };
+        const count = m[0] === 'scenic'
+          ? this.allPins().length
+          : m[0] === 'places'
+            ? this.liveCats().reduce((sum, cat) => sum + cat.items.length, 0)
+            : (this.state.liveEvents || []).length;
+        return { label: m[1], count, active: on, color: on ? '#132a1f' : 'rgba(255,255,255,.85)', pick: () => this.setState({ pinMode: m[0], pin: -1 }) };
+      }),
+      showScenicFilters: (this.state.pinMode || 'scenic') === 'scenic',
+      scenicFilterOpts: ([
+        ['museum', 'Музей'],
+        ['history', 'Түүхэн байршил'],
+        ['artifact', 'Түүхэн олдвор'],
+        ['scenic', 'Үзэсгэлэнт газар'],
+      ] as [string, string][]).map(([key, label]) => {
+        const active = this.state.scenicFilter === key;
+        return {
+          key, label, active,
+          count: this.allPins().filter((p) => this.scenicCategory(p) === key).length,
+          pick: () => this.setState({ scenicFilter: active ? 'all' : key, pin: -1, nearMeActive: false }),
+        };
+      }),
+      showPlaceFilters: (this.state.pinMode || 'scenic') === 'places',
+      placeFilterOpts: this.liveCats().map((cat) => {
+        const active = this.state.placeFilter === cat.slug;
+        return {
+          key: cat.slug,
+          label: lang === 'en' ? cat.nameEn : cat.name,
+          count: cat.items.length,
+          active,
+          pick: () => this.setState({ placeFilter: active ? 'all' : cat.slug, pin: -1, nearMeActive: false }),
+        };
       }),
       pinPillShift: 'calc(' + Math.max(0, ['scenic', 'places', 'events'].indexOf(this.state.pinMode || 'scenic')) + ' * 100%)',
       // OSM road/rail overlays: one entry per toggle button on the map page.
