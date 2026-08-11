@@ -44,7 +44,11 @@ export default function SuggestDetail() {
   }));
 
   return (
-    <section data-screen-label="Санал болгох дэлгэрэнгүй" className="box-border min-h-screen pt-[110px] px-12 pb-[60px]">
+    // The only detail page that was still hard-coded to the desktop's 48px
+    // gutter and 110px top inset — on a 360px phone that spent a quarter of
+    // the width on margins and pushed the back link most of a thumb's reach
+    // down the screen. Same pair of insets every other detail page uses.
+    <section data-screen-label="Санал болгох дэлгэрэнгүй" className="box-border min-h-screen" style={{ padding: V.isMobile ? '88px 18px 40px' : '110px 48px 60px' }}>
       <button
         onClick={() => router.push('/suggest')}
         className="mb-[26px] inline-flex cursor-pointer items-center gap-2 border-0 bg-transparent text-[13px] font-semibold text-[rgba(242,237,227,.6)] transition-colors duration-[250ms] hover:text-[var(--accent,#E8B84B)]"
