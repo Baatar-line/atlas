@@ -59,7 +59,7 @@ export default function AboutPage() {
             the hero photo was showing anyway. The remaining spacing scales
             with viewport height so a short laptop tightens rather than
             overflows. */}
-        <div className="mx-auto w-full max-w-[1040px] min-[1800px]:max-w-[1240px] pt-[clamp(14px,3vh,40px)] px-7 pb-[clamp(16px,3vh,40px)]">
+        <div className="mx-auto w-full max-w-[1040px] min-[1800px]:max-w-[1240px] pt-[clamp(12px,2.6vh,36px)] px-7 pb-[clamp(12px,2.6vh,36px)]">
           <div>
             {/* icon and label both sit flush at the row's top, in the same 40px
                 band, so their centers line up; the connector is one stub below
@@ -70,15 +70,33 @@ export default function AboutPage() {
                   <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full border border-[rgba(242,237,227,.32)] bg-transparent text-cream"><row.icon size={17} /></span>
                   <div className={`w-px flex-shrink-0 basis-0 bg-[rgba(242,237,227,.28)] ${i === V.abTimeline.length - 1 ? 'grow-0' : 'grow'}`}></div>
                 </div>
-                <div className="flex flex-1 items-start justify-between gap-3.5 pb-[clamp(10px,2.6vh,24px)]">
+                {/* Tightened along with the third line each paragraph just
+                    gained — four extra lines is about 90px, and the fold has
+                    to keep fitting the short end of the viewport range. */}
+                <div className="flex flex-1 items-start justify-between gap-3.5 pb-[clamp(8px,2.4vh,22px)]">
                   <div className="flex-1">
                     <div className="flex min-h-10 items-center">
                       <div className="text-[11px] font-extrabold uppercase tracking-[.1em] text-[var(--accent,#E8B84B)]">{row.label}</div>
                     </div>
-                    {/* Capped well short of the column it now sits in: the
-                        width is there to cut the line count, not to run a
-                        sentence the full 900px across. */}
-                    <div className="mt-1.5 max-w-[560px] min-[1800px]:max-w-[680px] text-[clamp(13px,1.6vh,15px)] min-[1800px]:text-[16px] leading-[1.6] text-cream">{row.desc}</div>
+                    {/* Three lines each, and the width is the only thing that
+                        decides that. The four paragraphs are 130, 128, 101
+                        and 101 characters, so every one of them lands on
+                        three lines only while a line holds between 44 and 50
+                        characters: fewer and the longest spills to four,
+                        more and the two shortest collapse to two. 25em is
+                        the middle of that window at roughly 0.53em per
+                        Cyrillic character.
+
+                        em, not px, because the type here is fluid
+                        (clamp(13px,1.6vh,15px) below). A pixel width would
+                        hold still while the font grew with the viewport,
+                        walking the characters-per-line straight out of that
+                        window — a tall monitor would break the longest
+                        paragraph onto a fourth line and a short one would
+                        pull the shortest back to two. Sized in em the ratio
+                        can't drift, which is also why the 1800px tier needs
+                        no override of its own. */}
+                    <div className="mt-1.5 max-w-[25em] text-[clamp(13px,1.6vh,15px)] min-[1800px]:text-[16px] leading-[1.6] text-cream">{row.desc}</div>
                   </div>
                   {/* One word per column (same manual-\n approach the short
                       `vert` title already used successfully) instead of letting
