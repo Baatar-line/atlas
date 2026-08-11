@@ -211,8 +211,15 @@ export default class BigBangLayout extends React.Component<Props, any> {
     // pin view (see syncMainMap) rather than a filter layered on top of it,
     // since it needs to show pins across every aimag at once instead of one
     // aimag's worth.
-    myLocation: null as { lat: number; lng: number } | null,
+    // accuracyM is the browser's own stated radius of confidence — a laptop
+    // on WiFi routinely reports kilometres. Kept because it's the difference
+    // between "the map is wrong" and "the browser doesn't know where you are
+    // to better than 3km", and only one of those is worth showing.
+    myLocation: null as { lat: number; lng: number; accuracyM?: number; manual?: boolean } | null,
     locating: false, locationError: '', nearRadiusKm: 5, nearMeActive: false,
+    // "Гараар тавих" — the next map click sets the visitor's own position
+    // instead of selecting an aimag. See setMyLocationManually.
+    pickingLocation: false,
     // Real values are read from localStorage in componentDidMount, not here —
     // localStorage doesn't exist during SSR, so reading it in a state field
     // initializer (which runs on both the server and the client's very first,
@@ -372,6 +379,7 @@ export default class BigBangLayout extends React.Component<Props, any> {
     if (this._mnVertResize) window.removeEventListener('resize', this._mnVertResize);
     if (this._vwResize) window.removeEventListener('resize', this._vwResize);
     if (this._aimagBgFrozenTimer) clearTimeout(this._aimagBgFrozenTimer);
+    this.stopGeoRefine();
   }
 
   // Admin Panel can update these via the "Фон зураг" tab — if the backend isn't
@@ -712,6 +720,13 @@ export default class BigBangLayout extends React.Component<Props, any> {
       m.on('zoomend', () => {
         if (m.getZoom() === m.getMinZoom()) m.panTo([46.8, 103.8], { animate: true });
       });
+      // Only ever active while "Гараар тавих" is armed — the rest of the time
+      // a bare-map click means nothing here, and the aimag polygons handle
+      // their own.
+      m.on('click', (e: any) => {
+        if (!this.state.pickingLocation) return;
+        this.setMyLocationManually(e.latlng.lat, e.latlng.lng);
+      });
       // Plain satellite tiles (no baked-in place-name labels) — `lyrs=y` (hybrid)
       // draws Google's own city/country labels straight into the raster image,
       // which collided with our own aimag-name/pin labels drawn on top.
@@ -811,7 +826,10 @@ export default class BigBangLayout extends React.Component<Props, any> {
           })
             .on('mouseover', () => this.setState({ hoverAimag: id }))
             .on('mouseout', () => this.setState({ hoverAimag: null }))
-            .on('click', () => this.setState((s: any) => ({
+            // A polygon click while placing a location belongs to the map's
+            // own handler above — selecting an aimag there would throw away
+            // the near-me mode the visitor is in the middle of fixing.
+            .on('click', () => !this.state.pickingLocation && this.setState((s: any) => ({
               mapAimag: s.mapAimag === id ? null : id,
               pin: -1, nearMeActive: false,
             })))
@@ -1006,20 +1024,86 @@ export default class BigBangLayout extends React.Component<Props, any> {
   // every aimag at once rather than one aimag's worth.
   requestMyLocation = () => {
     if (!navigator.geolocation) { this.setState({ locationError: 'Энэ төхөөрөмж/хөтөч байршил тодорхойлохыг дэмжихгүй байна' }); return; }
+    this.stopGeoRefine();
     this.setState({ locating: true, locationError: '' });
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        this.setState({
-          myLocation: { lat: pos.coords.latitude, lng: pos.coords.longitude },
-          locating: false, nearMeActive: true, mapAimag: null, pin: -1, hoverAimag: null,
-        });
-      },
+      (pos) => { this.applyPosition(pos, true); this.startGeoRefine(); },
       () => this.setState({ locating: false, locationError: 'Байршил тодорхойлж чадсангүй — байршил хуваалцах зөвшөөрлөө шалгана уу' }),
-      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 },
+      // maximumAge: 0, not the 60s this used to allow. That option lets the
+      // browser hand back a position it already had lying around without
+      // doing any new work — which is exactly what put the marker on the
+      // place this browser was the last time it looked, and no amount of
+      // pressing the button could dislodge it.
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
     );
   };
+
+  // Keeps the more accurate of the fix we have and the one that just arrived.
+  // `force` is for the very first fix of a request, which replaces whatever
+  // an earlier request left behind however coarse it is — otherwise a stale
+  // 50m reading from another part of the country would outrank a fresh 2km
+  // one and pressing the button would appear to do nothing.
+  applyPosition = (pos: GeolocationPosition, force: boolean) => {
+    const next = {
+      lat: pos.coords.latitude, lng: pos.coords.longitude,
+      accuracyM: Math.round(pos.coords.accuracy || 0),
+    };
+    this.setState((s: any) => {
+      const cur = s.myLocation;
+      if (!force && cur && cur.accuracyM && next.accuracyM >= cur.accuracyM) return null;
+      return { myLocation: next, locating: false, nearMeActive: true, mapAimag: null, pin: -1, hoverAimag: null };
+    });
+  };
+
+  // getCurrentPosition returns the first fix the device can produce, and on
+  // anything without GPS that is the WiFi/IP estimate — a guess accurate to
+  // a neighbourhood at best, and the one most likely to still be describing
+  // where this browser was last time. A real GPS fix, where there is one,
+  // lands a few seconds later. So we keep listening for a short window and
+  // take the best reading that arrives, then stop: a watch left running
+  // would keep the map re-flying for as long as the page is open.
+  _geoWatchId: number | null = null;
+  _geoWatchTimer: any = null;
+  startGeoRefine = () => {
+    this._geoWatchId = navigator.geolocation.watchPosition(
+      (pos) => this.applyPosition(pos, false),
+      () => {},
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+    );
+    this._geoWatchTimer = setTimeout(this.stopGeoRefine, 10000);
+  };
+  stopGeoRefine = () => {
+    if (this._geoWatchId != null) { navigator.geolocation.clearWatch(this._geoWatchId); this._geoWatchId = null; }
+    if (this._geoWatchTimer) { clearTimeout(this._geoWatchTimer); this._geoWatchTimer = null; }
+  };
+
+  // The escape hatch, and for a lot of visitors the only thing that works.
+  // A browser that can't see WiFi networks falls back to locating you by IP,
+  // which resolves to the ISP's end of the connection — a fixed point that
+  // can sit kilometres away and does not move when you do, so re-asking it
+  // returns the same wrong place forever. Nothing in the geolocation API can
+  // improve on that; putting the point down yourself can.
+  //
+  // `keepView` is for the drag handle: the click-to-place path should frame
+  // the new radius circle, but yanking the map out from under a drag that
+  // just ended reads as the map fighting you.
+  setMyLocationManually = (lat: number, lng: number, keepView = false) => {
+    this.stopGeoRefine();
+    if (keepView) this._lastFlownNearKey = this.nearFlyKey(lat, lng);
+    this.setState({
+      myLocation: { lat, lng, accuracyM: 0, manual: true },
+      pickingLocation: false, locating: false, locationError: '',
+      nearMeActive: true, mapAimag: null, pin: -1, hoverAimag: null,
+    });
+  };
+  togglePickLocation = () => this.setState((s: any) => ({ pickingLocation: !s.pickingLocation }));
+  // Shared with syncMainMap so "have we already flown here" is answered the
+  // same way in both places — two spellings of this key would mean the map
+  // either re-flies on every redraw or never flies at all.
+  nearFlyKey = (lat: number, lng: number) => this.state.nearRadiusKm + ':' + lat.toFixed(4) + ':' + lng.toFixed(4);
+
   setNearRadius = (km: number) => this.setState({ nearRadiusKm: km });
-  clearNearMe = () => this.setState({ nearMeActive: false, pin: -1 });
+  clearNearMe = () => { this.stopGeoRefine(); this.setState({ nearMeActive: false, pickingLocation: false, pin: -1 }); };
 
   // Restyles the authoritative ADM1 layer and pin markers to match state.
   syncMainMap(rebuildPins: boolean = true) {
@@ -1089,13 +1173,39 @@ export default class BigBangLayout extends React.Component<Props, any> {
         fill: true, fillColor: accent, fillOpacity: 0.04,
         interactive: false,
       }).addTo(this._pinLayer);
+      // The browser's own margin of error around that position, drawn only
+      // when it is big enough to matter. A dot alone claims a precision the
+      // device usually doesn't have — when the fix is a 3km WiFi estimate,
+      // this circle is the honest version of it, and it's what explains a
+      // marker that landed somewhere the visitor isn't.
+      if (myLocation.accuracyM && myLocation.accuracyM > 200) {
+        window.L.circle([myLocation.lat, myLocation.lng], {
+          radius: myLocation.accuracyM,
+          color: '#4285F4', weight: 1, opacity: 0.5,
+          fill: true, fillColor: '#4285F4', fillOpacity: 0.1,
+          interactive: false,
+        }).addTo(this._pinLayer);
+      }
       // My own position — a plain blue dot (the usual "you are here"
-      // convention), not clickable, not part of the pin index space below.
-      const meHtml = '<div style="width:16px;height:16px;border-radius:50%;background:#4285F4;border:3px solid #fff;box-shadow:0 0 0 6px rgba(66,133,244,.35)"></div>';
+      // convention), not part of the pin index space below.
+      //
+      // Draggable, which is the whole point: when the browser's fix lands in
+      // the wrong part of town there is otherwise nothing a visitor can do
+      // about it, and dragging the dot is a more obvious repair than arming
+      // a click mode. That costs the dot its click-through — a draggable
+      // marker has to be interactive — but it's 16px over satellite tiles,
+      // and it sits on the one spot no pin is being looked for.
+      const meHtml = '<div style="width:16px;height:16px;border-radius:50%;background:#4285F4;border:3px solid #fff;box-shadow:0 0 0 6px rgba(66,133,244,.35);cursor:grab"></div>';
       window.L.marker([myLocation.lat, myLocation.lng], {
         icon: window.L.divIcon({ className: '', html: meHtml, iconSize: [16, 16], iconAnchor: [8, 8] }),
-        interactive: false, zIndexOffset: 1000,
-      }).addTo(this._pinLayer);
+        draggable: true, zIndexOffset: 1000,
+        title: 'Байршил буруу бол чирж зөв газарт нь тавина уу',
+      })
+        .on('dragend', (e: any) => {
+          const ll = e.target.getLatLng();
+          this.setMyLocationManually(ll.lat, ll.lng, true);
+        })
+        .addTo(this._pinLayer);
 
       const near = this.nearMePins();
       near.forEach((o) => {
@@ -1106,7 +1216,12 @@ export default class BigBangLayout extends React.Component<Props, any> {
           '<div style="width:' + dot + 'px;height:' + dot + 'px;margin:0 auto;border-radius:50%;background:' + (on ? accent : '#f0ebe1') + ';border:1.4px solid rgba(8,10,14,.85);box-shadow:0 0 0 6px rgba(232,184,75,' + (on ? '.3' : '.16') + ')"></div>' +
           '<div style="margin-top:4px;font-size:' + (bigText ? 13 : 10.5) + 'px;font-weight:700;color:' + (on ? accent : '#fff') + ';text-shadow:0 1px 4px rgba(0,0,0,.9),0 0 3px rgba(0,0,0,.9);white-space:nowrap">' + o.p.name + ' · ' + distLabel + '</div></div>';
         window.L.marker([o.p.lat, o.p.lng], { icon: window.L.divIcon({ className: '', html, iconSize: [1, 1] }) })
-          .on('click', () => this.setState({ pin: on ? -1 : o.i }))
+          // Leaflet fires the map's own click alongside a marker's, so while
+          // a location is being placed this click already means "here" — see
+          // the map handler in mainMapRef. Selecting a pin on the same press
+          // would open the detail rail over the placement the visitor just
+          // made.
+          .on('click', () => !this.state.pickingLocation && this.setState({ pin: on ? -1 : o.i }))
           .addTo(this._pinLayer);
       });
 
@@ -1115,7 +1230,7 @@ export default class BigBangLayout extends React.Component<Props, any> {
       // and re-flying then would fight the user's own pan/zoom. Fits to the
       // full radius circle (not just however many pins landed inside it) so
       // picking e.g. 100km always shows the whole 100km, even with 0 results.
-      const nearKey = this.state.nearRadiusKm + ':' + myLocation.lat.toFixed(4) + ':' + myLocation.lng.toFixed(4);
+      const nearKey = this.nearFlyKey(myLocation.lat, myLocation.lng);
       if (this._lastFlownNearKey !== nearKey) {
         const bounds = radiusCircle.getBounds();
         m.flyToBounds(bounds, { ...BigBangLayout.FLY_PAD, maxZoom: 13, duration: 0.9 });
@@ -1150,7 +1265,12 @@ export default class BigBangLayout extends React.Component<Props, any> {
           '<div style="width:' + dot + 'px;height:' + dot + 'px;margin:0 auto;border-radius:50%;background:' + (on ? accent : '#f0ebe1') + ';border:1.4px solid rgba(8,10,14,.85);box-shadow:0 0 0 6px rgba(232,184,75,' + (on ? '.3' : '.16') + ')"></div>' +
           '<div style="margin-top:4px;font-size:' + (bigText ? 13 : 10.5) + 'px;font-weight:700;color:' + (on ? accent : '#fff') + ';text-shadow:0 1px 4px rgba(0,0,0,.9),0 0 3px rgba(0,0,0,.9);white-space:nowrap">' + o.p.name + '</div></div>';
         window.L.marker(latlng, { icon: window.L.divIcon({ className: '', html, iconSize: [1, 1] }) })
-          .on('click', () => this.setState({ pin: on ? -1 : o.i }))
+          // Leaflet fires the map's own click alongside a marker's, so while
+          // a location is being placed this click already means "here" — see
+          // the map handler in mainMapRef. Selecting a pin on the same press
+          // would open the detail rail over the placement the visitor just
+          // made.
+          .on('click', () => !this.state.pickingLocation && this.setState({ pin: on ? -1 : o.i }))
           .addTo(this._pinLayer);
       });
       // Only fly the view when the *selection itself* changes — syncMainMap
@@ -2034,6 +2154,17 @@ export default class BigBangLayout extends React.Component<Props, any> {
       // "Ойрхон газар олох" — see requestMyLocation/syncMainMap.
       nearMeActive: this.state.nearMeActive, myLocation: this.state.myLocation,
       locating: this.state.locating, locationError: this.state.locationError,
+      // Shown beside the result count so a fix that landed in the wrong place
+      // says so itself. Empty below 200m, where the number is precise enough
+      // that printing it would only add noise.
+      myAccuracyLabel: (() => {
+        const m = this.state.myLocation?.accuracyM || 0;
+        if (!m || m <= 200) return '';
+        return m < 1000 ? `±${m} м` : `±${(m / 1000).toFixed(1)} км`;
+      })(),
+      myLocationManual: !!this.state.myLocation?.manual,
+      pickingLocation: this.state.pickingLocation,
+      togglePickLocation: this.togglePickLocation,
       requestMyLocation: this.requestMyLocation, clearNearMe: this.clearNearMe,
       nearRadiusOpts: [1, 5, 15, 50, 100].map((km) => ({
         km, label: km < 1 ? km * 1000 + ' м' : km + ' км',
