@@ -9,7 +9,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Accessibility, MapPin } from 'lucide-react';
 import { useIsMobile } from './bigbang/ui';
-import { AIMAGS, CATS, FCRIT } from './bigbang/data';
+import { AIMAGS, CATS, FCRIT, SCENIC_IDEAS, SUB_IDEAS } from './bigbang/data';
 
 export type CreateKind = 'place' | 'scenic' | 'event';
 
@@ -88,6 +88,119 @@ interface Props {
   lockedContact?: { phone?: string | null; email?: string | null };
   onClose: () => void;
   onSubmit: (data: CreateFormData) => void | Promise<void>;
+}
+
+// The examples rail beside the form (see SUB_IDEAS in data.ts for what these
+// are for). Read-only on purpose: clicking one would have to write it
+// somewhere, and there is nowhere for it to go — the sub-category is a fixed
+// select and the name is the visitor's own business. It is a reference
+// column, not a set of controls.
+//
+// `activeSub` is whatever the form's sub-category select currently holds, so
+// the group being filled in is the one lit up.
+function IdeaPanel({ kind, activeSub }: { kind: CreateKind; activeSub: string }) {
+  // Scenic pins have no sub-category select, so there is nothing to group by
+  // and nothing to highlight — one flat list.
+  const scenic = kind === 'scenic';
+  const groups = scenic
+    ? []
+    : CATS.map((c) => ({
+        cat: c.name,
+        // Sub-categories with no examples are dropped rather than shown
+        // empty: a heading with nothing under it reads as a section that
+        // failed to load.
+        subs: c.subs.filter((s) => SUB_IDEAS[s]?.length).map((s) => ({ sub: s, ideas: SUB_IDEAS[s] })),
+      })).filter((g) => g.subs.length);
+
+  const Chip = ({ text }: { text: string }) => (
+    <span className="whitespace-nowrap rounded-full border border-[rgba(255,255,255,.12)] bg-[rgba(255,255,255,.04)] px-[7px] py-[2px] text-[10.5px] leading-[1.4] text-[rgba(242,237,227,.72)]">{text}</span>
+  );
+
+  return (
+    // Sized and scrolled independently of the form: the two columns hold
+    // different amounts and tying them to one height would either crop this
+    // list or stretch the form to match it.
+    //
+    // Two widths, because the two lists are different shapes. The place list
+    // is ten sub-categories each with their own examples, and needs 500px:
+    // at the original 300 the usable column came to ~242px after the padding
+    // and the group's own indent, while the widest chip ("Шинжлэх ухааны
+    // cafe") is around 126px, so two of them never fit a line and almost
+    // every group broke one chip per row.
+    //
+    // The scenic list is seven bare items with nothing to group, so it runs
+    // as a two-column grid and only needs to be as wide as two of its own
+    // lines — 300px. That leaves 131px a column, which clears the longest
+    // name ("Одон дурандах төв", ~111px) with room to spare; at 260 the
+    // column came to exactly that name's width and the chips are nowrap, so
+    // it would have spilled rather than fitted.
+    //
+    // The breakpoint moves with the width: form (640) + gap (16) + rail +
+    // overlay padding (72) is what has to fit, so 1300 and 1100 respectively,
+    // each leaving real slack rather than pressing the pair against the
+    // viewport edges. Narrower than that the rail doesn't render at all and
+    // the form is centred alone, as before.
+    <aside className={`box-border hidden max-h-[90vh] flex-none overflow-auto rounded-2xl border border-[rgba(255,255,255,.14)] bg-[#171410] p-4 shadow-[0_30px_80px_rgba(0,0,0,.6)] ${scenic ? 'w-[300px] min-[1100px]:block' : 'w-[500px] min-[1300px]:block'}`}>
+      <div className="text-[13px] font-extrabold tracking-[-0.01em] text-cream-2">Ямар газрууд болох вэ?</div>
+      {/* One line, not two: the rail is designed to be read whole without
+          scrolling, so every line it spends on itself is one the examples
+          don't get. */}
+      <div className="mt-1 text-[11px] leading-[1.4] text-[rgba(242,237,227,.5)]">Жишээ санаанууд — сонгох шаардлагагүй.</div>
+
+      {scenic ? (
+        // Two per row, on a grid rather than flex-wrap. Wrapping would fit
+        // three narrow names on one line and one wide name on the next,
+        // giving a ragged block that has to be read across and back; fixed
+        // columns keep every chip starting on one of two x positions, so
+        // seven unrelated names scan as a list. justify-items-start leaves
+        // each chip its own text's width instead of stretching it to fill
+        // its cell.
+        <div className="mt-3 grid grid-cols-2 justify-items-start gap-1.5">
+          {SCENIC_IDEAS.map((t) => <Chip key={t} text={t} />)}
+        </div>
+      ) : (
+        <div className="mt-3 flex flex-col gap-2.5">
+          {groups.map((g) => (
+            <div key={g.cat} className="flex flex-col gap-1">
+              <div className="text-[9.5px] font-bold uppercase tracking-[.1em] text-[rgba(242,237,227,.35)]">{g.cat}</div>
+              {g.subs.map((s) => {
+                const on = s.sub === activeSub;
+                return (
+                  // The sub-category name sits beside its examples rather
+                  // than above them. Stacked, all ten groups came to roughly
+                  // 970px and the rail had to scroll; side by side each
+                  // group gives back the line its own heading used to take,
+                  // and the whole list fits a screen. A fixed label column
+                  // (not shrink-to-fit) is what keeps the chips starting on
+                  // the same x for every group — ragged left edges would
+                  // make ten short rows read as noise.
+                  <div
+                    key={s.sub}
+                    className="flex items-start gap-2 rounded-lg py-1 pl-2 pr-1.5 transition-colors duration-200"
+                    style={{
+                      // A left rule rather than a filled block: the panel is
+                      // already a column of small text, and a solid highlight
+                      // behind one group buried it instead of picking it out.
+                      borderLeft: `2px solid ${on ? 'var(--accent,#E8B84B)' : 'rgba(255,255,255,.1)'}`,
+                      background: on ? 'rgba(232,184,75,.07)' : 'transparent',
+                    }}
+                  >
+                    <div
+                      className="w-[124px] flex-none pt-[3px] text-[11px] font-bold leading-[1.3]"
+                      style={{ color: on ? 'var(--accent,#E8B84B)' : 'rgba(242,237,227,.75)' }}
+                    >{s.sub}</div>
+                    <div className="flex min-w-0 flex-1 flex-wrap gap-1.5">
+                      {s.ideas.map((t) => <Chip key={t} text={t} />)}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      )}
+    </aside>
+  );
 }
 
 const TITLES: Record<CreateKind, string> = {
@@ -470,6 +583,13 @@ export default function CreateForm({ kind, mode = 'create', initial, lockedConta
 
   return (
     <div className="fixed inset-0 z-[60] box-border flex items-center justify-center bg-[rgba(6,8,12,.72)] backdrop-blur-[8px] [animation:bbFadeUp_.25s_ease_both]" style={{ padding: isMobile ? '14px' : '36px' }}>
+      {/* items-start so the two columns hang from the same top edge instead
+          of the shorter one floating in the middle of the taller. The pair is
+          what gets centred now — the form shifts left by half the rail's
+          width on wide screens, which is what makes room for it without
+          overlapping anything. Below the rail's own breakpoint it renders
+          nothing, so this row is just the form again, still centred. */}
+      <div className="flex max-w-full items-start justify-center gap-4">
       <div className="box-border w-[640px] max-w-full max-h-[90vh] overflow-auto rounded-2xl border border-[rgba(255,255,255,.14)] bg-[#171410] shadow-[0_30px_80px_rgba(0,0,0,.6)]" style={{ padding: isMobile ? '18px 16px 20px' : '26px 28px 28px' }}>
         <div className="mb-5 flex items-center justify-between">
           <div className="text-lg font-extrabold tracking-[-0.02em] text-cream-2">{mode === 'edit' ? EDIT_TITLES[kind] : TITLES[kind]}</div>
@@ -771,6 +891,12 @@ export default function CreateForm({ kind, mode = 'create', initial, lockedConta
             )}
           </div>
         </div>
+      </div>
+
+      {/* Events get no rail: an event is a thing that happens on a date, not
+          a kind of venue, so there is no sub-category for examples to hang
+          off and nothing useful to prompt with. */}
+      {kind !== 'event' && <IdeaPanel kind={kind} activeSub={sub} />}
       </div>
     </div>
   );

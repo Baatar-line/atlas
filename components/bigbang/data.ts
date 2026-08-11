@@ -695,6 +695,40 @@ export interface Cat {
   previews: { name: string; meta: string }[]; items: CatItem[];
 }
 
+// Concrete examples for a sub-category, shown beside the add-place form.
+//
+// Prompts, not taxonomy: none of these is a value the form can store, and
+// nothing validates against them. They exist because "Кафе" is a word most
+// people read as "the coffee shop on the corner", so that is what gets
+// submitted — while the sub-category is wide enough to hold a cat cafe, a
+// board-game cafe or a chess cafe, and those are the entries the catalogue
+// is short of. A list of what already counts is a cheaper way to say that
+// than any amount of instruction text.
+//
+// Keyed by the sub-category's own name, so a rename in CATS.subs above
+// silently drops its examples rather than mis-filing them under a
+// neighbouring one. Sub-categories with nothing worth prompting are simply
+// absent — see IdeaPanel, which skips them.
+export const SUB_IDEAS: Record<string, string[]> = {
+  'Кафе': ['Шинжлэх ухааны cafe', 'Муурны кафе', 'Шатрын кафе', 'Board game кафе'],
+  'Дээд зэрэглэлийн ресторан': ["Chef's table", 'Дарс таних', 'Supper club'],
+  'Кино театр': ['Drive-in кино'],
+  'Амьд хөгжим': ['Open mic'],
+  'Студи': ['Зурагчийн студи', 'Зураг зурдаг'],
+  'Амралтын газар': ['Glamping'],
+  'Явган аялал': ['Морин аялал', 'Нохой чарга', 'Завь аялал'],
+  'Спорт': ['Off-road', 'Swimming', 'Skiing', 'Cycling'],
+  'Тоглоом': ['Гольф симулятор', 'Паддл', 'VR arcade', 'Bowling', 'Escape Rooms'],
+  'Адреналин': ['Буудлага', 'Нум сум', 'Шүхрээр буух', 'Авиралт'],
+};
+
+// The same idea for scenic pins, which have no sub-category select to hang
+// examples off — one flat list beside the form.
+export const SCENIC_IDEAS: string[] = [
+  'Галерей', 'Одон дурандах төв', 'Landmarks', 'Historical Sites',
+  'Parks', 'Viewpoints', 'Photo Spots',
+];
+
 export const CATS: Cat[] = [
   {
     slug: 'food', num: '01', name: 'Хоол', nameEn: 'Food',
