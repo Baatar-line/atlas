@@ -136,19 +136,67 @@ async function shrinkImage(file: File, maxDim: number, quality: number): Promise
 }
 
 const CLOUDINARY_FREE_LIMIT = 10 * 1024 * 1024;
-// Cloudinary's free-plan video/raw cap. The upload now goes straight to
-// Cloudinary (see uploadImage below), so this is just a client-side
-// pre-check for a clean error message instead of whatever Cloudinary itself
-// returns for an oversized file. Skippable per call site (see `skipSizeLimit`
-// below) — the Home page's admin-managed background is the one place that's
-// meant to allow a longer/bigger video than everything else uploaded by
-// regular users (place/event/scenic photos, other backgrounds).
+// This account's real Cloudinary plan cap on a single *video* file —
+// confirmed directly from Cloudinary's own rejection of an actual ~119MB
+// video: "File size too large. Got 124466784. Maximum is 104857600" (100MB).
+// An earlier test here used a synthetic random-bytes blob instead of a real
+// video; Cloudinary's `auto` resource-type detection couldn't recognize it
+// as video and quota-checked it as a generic/raw file instead, which sits
+// under a different (lower, 10MB) cap on this plan — that result didn't
+// actually apply to real video uploads and wrongly lowered this constant.
+// This is a real plan-level ceiling on Cloudinary's side either way, not
+// something any client-side code (chunking included) can raise — only
+// upgrading the actual Cloudinary plan changes it. Skippable per call site
+// (see `skipSizeLimit` below) only so a future plan upgrade doesn't also
+// need this constant bumped everywhere at once.
 const SERVER_UPLOAD_LIMIT = 100 * 1024 * 1024;
 
 async function prepareImageForUpload(file: File): Promise<File> {
   let out = await shrinkImage(file, 2400, 0.85);
   if (out.size > CLOUDINARY_FREE_LIMIT) out = await shrinkImage(out, 1600, 0.75);
   return out;
+}
+
+type UploadSignature = { apiKey: string; timestamp: number; signature: string; folder: string; cloudName: string };
+
+// Cloudinary's own recommended chunk size for its chunked/large-file upload
+// protocol (POST-ing in ~20MB slices with a Content-Range + a shared
+// X-Unique-Upload-Id header, instead of one single request). A single POST
+// with the whole file in one FormData — what this used to always do — is
+// exactly what "Failed to fetch" further up the pipeline meant: for a large
+// video that single request either got killed by an intermediate timeout or
+// exceeded whatever the browser/network could hold open in one shot, and
+// that shows up as a bare network-layer failure with no useful status code
+// at all, unlike a real HTTP error response.
+const CHUNK_SIZE = 20 * 1024 * 1024;
+
+async function uploadChunked(file: File | Blob, sig: UploadSignature): Promise<{ secure_url: string }> {
+  const uploadId = (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`).toString();
+  const total = file.size;
+  let start = 0;
+  let last: { secure_url: string } | null = null;
+  while (start < total) {
+    const end = Math.min(start + CHUNK_SIZE, total);
+    const form = new FormData();
+    form.append('file', file.slice(start, end));
+    form.append('api_key', sig.apiKey);
+    form.append('timestamp', String(sig.timestamp));
+    form.append('signature', sig.signature);
+    form.append('folder', sig.folder);
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${sig.cloudName}/auto/upload`, {
+      method: 'POST',
+      headers: { 'X-Unique-Upload-Id': uploadId, 'Content-Range': `bytes ${start}-${end - 1}/${total}` },
+      body: form,
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      throw new Error(body?.error?.message || `Upload failed: ${res.status}`);
+    }
+    last = await res.json();
+    start = end;
+  }
+  if (!last) throw new Error('Хоосон файл байна');
+  return last;
 }
 
 // Uploads a real file (image or video) straight to Cloudinary and returns the
@@ -174,7 +222,12 @@ export async function uploadImage(file: File, folder: string, token?: string, op
     const body = await sigRes.json().catch(() => null);
     throw new Error(body?.error || `Upload signature failed: ${sigRes.status}`);
   }
-  const sig = await sigRes.json();
+  const sig: UploadSignature = await sigRes.json();
+
+  if (toSend.size > CHUNK_SIZE) {
+    const data = await uploadChunked(toSend, sig);
+    return data.secure_url;
+  }
 
   const form = new FormData();
   form.append('file', toSend);
