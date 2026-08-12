@@ -58,7 +58,11 @@ export interface CreateFormData {
   // block below); places just have the one `phone`.
   phone2?: string;
   instagram?: string;
+  // Display handle shown as the link text on the place's own page (e.g.
+  // "skylounge21") instead of the raw URL — place-only, optional.
+  instagramName?: string;
   facebook?: string;
+  facebookName?: string;
   contactEmail?: string;
   openTime?: string;
   closeTime?: string;
@@ -333,7 +337,9 @@ export default function CreateForm({ kind, mode = 'create', initial, lockedConta
   const [phone, setPhone] = useState(lockedPhone || initial?.phone || '');
   const [phone2, setPhone2] = useState(initial?.phone2 || '');
   const [instagram, setInstagram] = useState(initial?.instagram || '');
+  const [instagramName, setInstagramName] = useState(initial?.instagramName || '');
   const [facebook, setFacebook] = useState(initial?.facebook || '');
+  const [facebookName, setFacebookName] = useState(initial?.facebookName || '');
   const [contactEmail, setContactEmail] = useState(lockedEmail || initial?.contactEmail || '');
   const [catSlug, setCatSlug] = useState(initial?.catSlug || CATS[0].slug);
   const [sub, setSub] = useState(initial?.sub || (CATS.find((c) => c.slug === initial?.catSlug) || CATS[0]).subs[0]);
@@ -690,7 +696,7 @@ export default function CreateForm({ kind, mode = 'create', initial, lockedConta
     };
     if (kind === 'place') {
       data.catName = curCat.name; data.catSlug = curCat.slug; data.sub = sub; data.access = access && crit.every(Boolean);
-      data.phone = phone.trim(); data.instagram = instagram.trim(); data.facebook = facebook.trim(); data.contactEmail = contactEmail.trim();
+      data.phone = phone.trim(); data.instagram = instagram.trim(); data.instagramName = instagramName.trim(); data.facebook = facebook.trim(); data.facebookName = facebookName.trim(); data.contactEmail = contactEmail.trim();
       data.openTime = openTime; data.closeTime = closeTime;
     } else if (kind === 'scenic') {
       data.icon = icon; data.scenicType = scenicType.trim();
@@ -761,11 +767,26 @@ export default function CreateForm({ kind, mode = 'create', initial, lockedConta
               <div className={`grid gap-3 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
                 <label className="flex flex-col gap-1.5">
                   <span className={labelSpanClass}>Instagram</span>
-                  <input value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder="instagram.com/skylounge21" className={`${inputClass} ${inputFontClass}`} />
+                  <input type="url" value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder="https://instagram.com/skylounge21" className={`${inputClass} ${inputFontClass}`} />
                 </label>
                 <label className="flex flex-col gap-1.5">
                   <span className={labelSpanClass}>Facebook</span>
-                  <input value={facebook} onChange={(e) => setFacebook(e.target.value)} placeholder="facebook.com/skylounge21" className={`${inputClass} ${inputFontClass}`} />
+                  <input type="url" value={facebook} onChange={(e) => setFacebook(e.target.value)} placeholder="https://facebook.com/skylounge21" className={`${inputClass} ${inputFontClass}`} />
+                </label>
+              </div>
+              {/* Separate from the URL above it — the URL is what the link
+                  actually opens, this is only what shows as its text on the
+                  place's own page (e.g. "skylounge21" instead of the full
+                  link). Optional: left blank, the page just shows the URL
+                  itself as before. */}
+              <div className={`grid gap-3 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                <label className="flex flex-col gap-1.5">
+                  <span className={labelSpanClass}>Instagram нэр</span>
+                  <input value={instagramName} onChange={(e) => setInstagramName(e.target.value)} placeholder="skylounge21" className={`${inputClass} ${inputFontClass}`} />
+                </label>
+                <label className="flex flex-col gap-1.5">
+                  <span className={labelSpanClass}>Facebook нэр</span>
+                  <input value={facebookName} onChange={(e) => setFacebookName(e.target.value)} placeholder="skylounge21" className={`${inputClass} ${inputFontClass}`} />
                 </label>
               </div>
               {/* The asterisk sits on the pair rather than on either field —
@@ -856,11 +877,11 @@ export default function CreateForm({ kind, mode = 'create', initial, lockedConta
               <div className={`grid gap-3 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
                 <label className="flex flex-col gap-1.5">
                   <span className={labelSpanClass}>Instagram</span>
-                  <input value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder="instagram.com/yourevent" className={`${inputClass} ${inputFontClass}`} />
+                  <input type="url" value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder="https://instagram.com/yourevent" className={`${inputClass} ${inputFontClass}`} />
                 </label>
                 <label className="flex flex-col gap-1.5">
                   <span className={labelSpanClass}>Facebook</span>
-                  <input value={facebook} onChange={(e) => setFacebook(e.target.value)} placeholder="facebook.com/yourevent" className={`${inputClass} ${inputFontClass}`} />
+                  <input type="url" value={facebook} onChange={(e) => setFacebook(e.target.value)} placeholder="https://facebook.com/yourevent" className={`${inputClass} ${inputFontClass}`} />
                 </label>
               </div>
               {/* Same pairing as the place form above — either one satisfies it. */}

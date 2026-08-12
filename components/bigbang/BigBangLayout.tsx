@@ -556,6 +556,9 @@ export default class BigBangLayout extends React.Component<Props, any> {
             hours, phone: p.phone || '', desc: p.description || '',
             access: !!p.accessible, img: (p.images && p.images[0]) || '', images: p.images || [],
             lat: p.lat ?? undefined, lng: p.lng ?? undefined, mapUrl: p.googleMapUrl || undefined,
+            instagramUrl: p.instagramUrl || undefined, instagramName: p.instagramName || undefined,
+            facebookUrl: p.facebookUrl || undefined, facebookName: p.facebookName || undefined,
+            contactEmail: p.contactEmail || undefined,
             id: p.id,
           } as CatItem;
         });
@@ -649,12 +652,33 @@ export default class BigBangLayout extends React.Component<Props, any> {
       timer = setTimeout(() => { if (!loaded) tryNext(); }, 3000);
     };
     const tryNext = () => {
-      if (idx >= SOURCES.length - 1) return;
-      idx++; errors = 0; loaded = false;
-      layer.setUrl(SOURCES[idx].url);
+      // Used to stop for good once the last source (OSM) also errored —
+      // leaving the map permanently blank for the rest of the session, only
+      // recoverable with a full page refresh. A burst of near-simultaneous
+      // tile requests (e.g. flyToBounds jumping to a new area — see
+      // "Гараар" in setMyLocationManually) can rack up a few errors on each
+      // source in quick succession even though every one of them works fine
+      // normally, cascading Google → ArcGIS → OSM in seconds. Looping back
+      // to source 0 after a short cooldown instead lets the map recover on
+      // its own once whatever caused the burst has passed.
+      idx = (idx + 1) % SOURCES.length;
+      errors = 0; loaded = false;
+      const next = SOURCES[idx];
+      layer.setUrl(next.url);
+      if (next.subdomains) layer.options.subdomains = next.subdomains;
       armTimeout();
     };
-    layer.on('tileload', () => { loaded = true; });
+    layer.on('tileload', () => {
+      loaded = true;
+      // Reset on every success, not just when actually switching sources —
+      // otherwise scattered, unrelated single-tile failures across a long
+      // session (a cache miss here, a brief blip there) slowly accumulate
+      // toward the threshold below and eventually trigger a false-positive
+      // fallback switch with no real ongoing outage behind it. Counting only
+      // *consecutive* failures since the last good tile is what actually
+      // indicates a source has gone bad.
+      errors = 0;
+    });
     layer.on('tileerror', () => { errors++; if (errors >= 4) tryNext(); });
     armTimeout();
     return layer;

@@ -27,7 +27,7 @@ export async function GET(request: Request) {
         // distinction is useful to the UI/admin audit and keeps attribution
         // honest while the catalogue is curated further.
         imageSource: images[0].startsWith('/api/heritage-image')
-          ? 'Wikimedia Commons · strict name match'
+          ? 'Wikimedia Commons · нэр эсвэл ойролцоох газрын зураг'
           : 'Wikimedia Commons · curated photograph',
         aimag: { name: p.aimag },
         lat: p.lat,

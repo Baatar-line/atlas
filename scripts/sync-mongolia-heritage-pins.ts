@@ -71,13 +71,11 @@ export function heritageImages(site: Site): string[] {
   const nature = [
     'https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Gobi_Desert.jpg/960px-Gobi_Desert.jpg',
     'https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Tavan_Bogd_Mountain.jpg/960px-Tavan_Bogd_Mountain.jpg',
-    commons('The frozen Khuvsgul Lake in Mongolia (iss074e0247458).jpg'),
     commons('Khongoryn Els 04.jpg'), commons('Yolyn Am 02.jpg'),
     commons('Tsagaan Suvarga Limestone Cliffs, Mongolia.jpg'),
     commons('Ulaan Tsutgalan Waterfall.jpg'),
     commons('Khorgo-Terkhiin Tsagaan Nuur National Park.jpg'),
     commons('Mongolian beautiful Uvs Lake.jpg'),
-    commons('Khar-Us-Nuur lake, Mongolia, ESC large ISS006 ISS006-E-7827.JPG'),
     commons('Tsambagarav Mountain.JPG'), commons('Dariganga (35579176371).jpg'),
   ];
   const rockArt = [
@@ -147,10 +145,11 @@ export function heritageImages(site: Site): string[] {
   else if (site.type.includes('Хадны')) pool = rockArt;
   else if (site.type.includes('Хүн чулуун') || site.type.includes('Буган чулуу')) pool = deerAndHumanStone;
   else if (site.type.startsWith('Археологи') || site.type.startsWith('Түүх')) pool = archaeology;
-  // Never substitute satellite imagery or a generic same-category landscape.
-  // The strict resolver returns a real, name-matched ground photograph when
-  // Commons has one and an honest "not yet verified" card otherwise.
-  return [`/api/heritage-image?strict=1&q=${encodeURIComponent(site.name)}`];
+  // Resolve a real photograph of the named place first, then a geotagged
+  // ground-level photograph taken near the pin. Coordinates let the resolver
+  // avoid generic category art and never fall back to satellite imagery or a
+  // generated placeholder card.
+  return [`/api/heritage-image?q=${encodeURIComponent(site.name)}&aimag=${encodeURIComponent(site.aimag)}&type=${encodeURIComponent(site.type)}&lat=${site.lat}&lng=${site.lng}`];
 }
 
 export const SITES: Site[] = [

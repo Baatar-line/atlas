@@ -680,15 +680,15 @@ export function sitesFor(gc: any, lang: string, databaseSites?: CountrySiteRow[]
 // of these chips in the same neutral white (see the travel-apps grid there).
 export interface TravelApp { slug: string; icon: LucideIcon; name: string; mn: string; en: string; url: string; logo?: string; }
 export const TRAVEL_APPS: TravelApp[] = [
-  { slug: 'organic-maps', icon: Map, name: 'Organic Maps', mn: 'Offline газрын зураг & навигаци', en: 'Offline maps & navigation', url: 'https://organicmaps.app/' },
-  { slug: 'osmand', icon: Compass, name: 'OsmAnd', mn: 'Offline маршрут & GPS', en: 'Offline routes & GPS', url: 'https://osmand.net/' },
+  { slug: 'maps-me', icon: Map, name: 'Maps.me', mn: 'Offline газрын зураг & навигаци', en: 'Offline maps & navigation', url: 'https://maps.me/' },
+  { slug: 'russian-topo-maps', icon: Compass, name: 'Russian Topo Maps', mn: 'Оффлайн топограф зураг', en: 'Offline topographic maps', url: 'https://play.google.com/store/apps/details?id=com.atlogis.sovietmaps.free' },
   { slug: 'windy', icon: Wind, name: 'Windy', mn: 'Салхи & цаг агаарын урьдчилсан мэдээ', en: 'Wind & weather forecast', url: 'https://www.windy.com/-Temperature-temp?temp,39.270,87.989,3' },
   { slug: 'ventusky', icon: CloudRain, name: 'Ventusky', mn: 'Хур тунадас & температурын зураг', en: 'Rainfall & temperature maps', url: 'https://www.ventusky.com/#p=31;89;2' },
   { slug: 'avis-mongolia', icon: Car, name: 'Avis Mongolia', mn: 'Машин түрээслэх', en: 'Rent a car', url: 'https://avis-mongolia.com/car-rental?ssid=nVfrblZ014TB' },
   { slug: 'drive-mongolia', icon: Route, name: 'Drive Mongolia', mn: 'Өөрөө жолоодох & хөтөчтэй аялал', en: 'Self-drive & guided tours', url: 'https://www.drivemongolia.com/?utm_source=chatgpt.com' },
 ];
 
-export interface CatItem { name: string; meta: string; sub: string; aimag?: string; hours?: string; phone?: string; desc?: string; access?: boolean; img?: string; images?: string[]; id?: number; lat?: number; lng?: number; mapUrl?: string; }
+export interface CatItem { name: string; meta: string; sub: string; aimag?: string; hours?: string; phone?: string; desc?: string; access?: boolean; img?: string; images?: string[]; id?: number; lat?: number; lng?: number; mapUrl?: string; instagramUrl?: string; instagramName?: string; facebookUrl?: string; facebookName?: string; contactEmail?: string; }
 export interface Cat {
   slug: string; num: string; name: string; nameEn: string; desc: string; descEn: string;
   glow: string; hero: string; pool: string[]; subs: string[];
@@ -842,7 +842,8 @@ export const STR: Record<'mn' | 'en', Record<string, string>> = {
     pdAccess: 'Хүртээмжтэй', pdRating: 'Үнэлгээ', pdHours: 'Цагийн хуваарь', pdPhone: 'Утас',
     pdAbout: 'Тухай', pdInfo: 'Мэдээлэл', pdA11yTitle: 'Тусгай хэрэгцээт хүнд ээлтэй',
     pdCat: 'Ангилал', pdSub: 'Дэд ангилал', pdLoc: 'Байршил', pdAccessRow: 'Хүртээмж', pdYes: 'Тийм ✓', pdNo: 'Мэдээлэлгүй',
-    pdRateTitle: 'Үнэлгээ өгөх', pdRateThanks: 'Баярлалаа! Таны үнэлгээ', pdRateHint: 'Одоор дарж үнэлнэ үү' },
+    pdRateTitle: 'Үнэлгээ өгөх', pdRateThanks: 'Баярлалаа! Таны үнэлгээ', pdRateHint: 'Одоор дарж үнэлнэ үү',
+    pdInstagram: 'Instagram', pdFacebook: 'Facebook', pdEmail: 'Имэйл' },
   en: { home: 'Home', about: 'About', signin: 'Sign in', catLabel: 'Categories',
     hint: 'Hover over a category', places: 'places', all: 'All', back: '← Home', tag: 'a space of date ideas', location: 'Location',
     mapHint: 'Click the map to filter by province', pinsLabel: 'pins',
@@ -905,7 +906,8 @@ export const STR: Record<'mn' | 'en', Record<string, string>> = {
     pdAccess: 'Accessible', pdRating: 'Rating', pdHours: 'Opening hours', pdPhone: 'Phone',
     pdAbout: 'About', pdInfo: 'Information', pdA11yTitle: 'Accessible for people with special needs',
     pdCat: 'Category', pdSub: 'Sub-category', pdLoc: 'Location', pdAccessRow: 'Accessibility', pdYes: 'Yes ✓', pdNo: 'Not specified',
-    pdRateTitle: 'Leave a rating', pdRateThanks: 'Thanks! Your rating', pdRateHint: 'Click a star to rate' },
+    pdRateTitle: 'Leave a rating', pdRateThanks: 'Thanks! Your rating', pdRateHint: 'Click a star to rate',
+    pdInstagram: 'Instagram', pdFacebook: 'Facebook', pdEmail: 'Email' },
 };
 
 // ── pure helpers ──

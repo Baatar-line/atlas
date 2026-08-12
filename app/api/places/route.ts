@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     const user = await requireAuth(request);
     const {
       name, description, images, categoryId, aimagId, lat, lng, openTime, closeTime, googleMapUrl,
-      subCategory, phone, instagramUrl, facebookUrl, contactEmail, accessible,
+      subCategory, phone, instagramUrl, instagramName, facebookUrl, facebookName, contactEmail, accessible,
     } = await request.json();
     if (!name || !description || !categoryId || !aimagId || !openTime || !closeTime) {
       return NextResponse.json({ error: 'Нэр, тайлбар, ангилал, аймаг, нээх/хаах цаг шаардлагатай' }, { status: 400 });
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
         lat: lat != null ? Number(lat) : undefined,
         lng: lng != null ? Number(lng) : undefined,
         openTime, closeTime, googleMapUrl,
-        subCategory, phone, instagramUrl, facebookUrl, contactEmail, accessible: !!accessible,
+        subCategory, phone, instagramUrl, instagramName: instagramName || undefined, facebookUrl, facebookName: facebookName || undefined, contactEmail, accessible: !!accessible,
         addedBy: user.userId,
         // admins publish immediately, everyone else goes through the approval queue
         status: user.role === 'admin' ? 'approved' : 'pending',

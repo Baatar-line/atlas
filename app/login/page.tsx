@@ -254,7 +254,7 @@ export default function Login() {
                 href="/"
                 className="mt-5 inline-block rounded-xl border-none bg-accent px-7 py-[11px] text-[14px] font-extrabold !text-[#132a1f]"
               >
-                <span className="font-brand">Atlas</span> руу орох →
+                <span className="[font-family:'Marcellus_SC',serif]">Atlas</span> руу орох →
               </Link>
             </div>
           )}

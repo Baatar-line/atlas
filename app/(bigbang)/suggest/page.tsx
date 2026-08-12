@@ -92,7 +92,7 @@ function useMarqueeDrift(pxPerSecond = 22) {
 
 // Bento-style spans (desktop only — collapses to a plain single column on
 // mobile) for the 6 travel-app cards, matched by index to V.travelApps'
-// order (Organic Maps, OsmAnd, Windy, Ventusky, Avis Mongolia, Drive
+// order (Maps.me, Russian Topo Maps, Windy, Ventusky, Avis Mongolia, Drive
 // Mongolia — see TRAVEL_APPS in data.ts). A 4-column grid: one big square
 // card, one tall card beside it, two small stacked squares, then two wide
 // cards underneath — mixing big/small like a real bento layout instead of
@@ -305,7 +305,12 @@ export default function SuggestPage() {
                       in currentColor, so the text colour here is what makes
                       it white. */}
                   <div className="box-border flex h-[38px] w-[38px] flex-none items-center justify-center rounded-xl border border-[rgba(255,255,255,.22)] p-[3px]">
-                    <div className="flex h-full w-full items-center justify-center rounded-[8px] bg-[rgba(255,255,255,.1)] text-cream-2 shadow-[inset_0_1px_0_rgba(255,255,255,.2)]">
+                    {/* A faint white plate (not gray, not the fully-opaque
+                        dark one tried before) — the drop-shadow on the glyph
+                        is what actually keeps it legible against a bright
+                        photo (Maps.me/Russian Topo Maps), so the plate itself
+                        can stay light without that contrast job falling on it. */}
+                    <div className="flex h-full w-full items-center justify-center rounded-[8px] bg-[rgba(255,255,255,.16)] text-white shadow-[inset_0_1px_0_rgba(255,255,255,.2)] [filter:drop-shadow(0_1px_3px_rgba(0,0,0,.85))]">
                       {/* A real logo file would arrive in its own brand
                           colours, so it's knocked out to flat white to match
                           the glyphs beside it. */}

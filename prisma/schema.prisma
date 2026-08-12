@@ -150,7 +150,13 @@ model Place {
 
   phone        String
   instagramUrl String
+  // Display handle shown as the link text on the place's own page instead of
+  // the raw URL (e.g. "skylounge21" rather than "https://instagram.com/
+  // skylounge21") — optional, since older rows and anyone who skips it still
+  // have a working link via instagramUrl alone, just shown as the full URL.
+  instagramName String?
   facebookUrl  String
+  facebookName String?
   contactEmail String
   accessible   Boolean     @default(false)
   addedBy      Int

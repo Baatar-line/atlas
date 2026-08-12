@@ -56,7 +56,9 @@ export async function createPlace(token: string | undefined, data: CreateFormDat
     subCategory: data.sub || undefined,
     phone: data.phone || undefined,
     instagramUrl: data.instagram || undefined,
+    instagramName: data.instagramName || undefined,
     facebookUrl: data.facebook || undefined,
+    facebookName: data.facebookName || undefined,
     contactEmail: data.contactEmail || undefined,
     accessible: !!data.access,
   }, token);
@@ -127,7 +129,9 @@ export async function updatePlace(token: string | undefined, id: number, data: C
     subCategory: data.sub || undefined,
     phone: data.phone || undefined,
     instagramUrl: data.instagram || undefined,
+    instagramName: data.instagramName || undefined,
     facebookUrl: data.facebook || undefined,
+    facebookName: data.facebookName || undefined,
     contactEmail: data.contactEmail || undefined,
     accessible: !!data.access,
   }, token);
