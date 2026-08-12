@@ -61,6 +61,11 @@ export default function PlaceDetail() {
   const desc = it.desc || it.meta;
   const catName = lang === 'en' ? cat.nameEn : cat.name;
 
+  // Stored the same bare "instagram.com/handle" way CreateForm collects it
+  // (see its placeholder text) rather than a full URL, so a plain href would
+  // 404 as a relative in-app link instead of opening the real site.
+  const withHttps = (url: string) => (/^https?:\/\//.test(url) ? url : `https://${url}`);
+
   const info = [
     { label: L.pdCat, value: catName },
     { label: L.pdSub, value: it.sub },
@@ -68,6 +73,9 @@ export default function PlaceDetail() {
     { label: L.pdHours, value: hours },
     { label: L.pdPhone, value: phone },
     { label: L.pdAccessRow, value: access ? L.pdYes : L.pdNo },
+    ...(it.instagramUrl ? [{ label: L.pdInstagram, value: it.instagramUrl, href: withHttps(it.instagramUrl) }] : []),
+    ...(it.facebookUrl ? [{ label: L.pdFacebook, value: it.facebookUrl, href: withHttps(it.facebookUrl) }] : []),
+    ...(it.contactEmail ? [{ label: L.pdEmail, value: it.contactEmail, href: `mailto:${it.contactEmail}` }] : []),
   ];
 
   return (
@@ -124,7 +132,11 @@ export default function PlaceDetail() {
               <div key={i2} className="flex items-baseline gap-3">
                 <span className="h-1.5 w-1.5 flex-none -translate-y-0.5 rounded-full bg-[var(--accent,#E8B84B)]"></span>
                 <span className="min-w-[130px] text-[13.5px] text-[rgba(242,237,227,.5)]">{row.label}</span>
-                <span className="text-sm font-semibold text-cream">{row.value}</span>
+                {(row as any).href ? (
+                  <a href={(row as any).href} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-[var(--accent,#E8B84B)] hover:underline">{row.value}</a>
+                ) : (
+                  <span className="text-sm font-semibold text-cream">{row.value}</span>
+                )}
               </div>
             ))}
           </div>

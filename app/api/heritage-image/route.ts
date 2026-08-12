@@ -1,39 +1,49 @@
 import { NextResponse } from 'next/server';
 
-const FALLBACK = 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Gobi_Desert.jpg/960px-Gobi_Desert.jpg';
 const BITMAP = /\.(?:jpe?g|png|webp|gif|tiff?)$/i;
+const NON_GROUND = /\b(?:iss\d*|satellite|aerial|spacecraft|space station|landsat|sentinel|worldview|orbital|earth observation|map|diagram|locator|relief|topograph|geolog|route|flag|coat of arms)\b/i;
+const AIMAG_EN: Record<string, string> = {
+  'Улаанбаатар': 'Ulaanbaatar', 'Архангай': 'Arkhangai', 'Баян-Өлгий': 'Bayan-Olgii',
+  'Баянхонгор': 'Bayankhongor', 'Булган': 'Bulgan', 'Говь-Алтай': 'Govi-Altai',
+  'Говьсүмбэр': 'Govisumber', 'Дархан-Уул': 'Darkhan-Uul', 'Дорноговь': 'Dornogovi',
+  'Дорнод': 'Dornod', 'Дундговь': 'Dundgovi', 'Завхан': 'Zavkhan', 'Орхон': 'Orkhon',
+  'Өвөрхангай': 'Ovorkhangai', 'Өмнөговь': 'Omnogovi', 'Сүхбаатар': 'Sukhbaatar',
+  'Сэлэнгэ': 'Selenge', 'Төв': 'Tov', 'Увс': 'Uvs', 'Ховд': 'Khovd',
+  'Хөвсгөл': 'Khuvsgul', 'Хэнтий': 'Khentii',
+};
 
-function xml(s: string) {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+function subjectEn(type: string) {
+  if (/музей/i.test(type)) return 'museum';
+  if (/нуур/i.test(type)) return 'lake';
+  if (/уул|хайрхан|овоo|овоо/i.test(type)) return 'mountain';
+  if (/хад|цав|чулуу/i.test(type)) return 'rock';
+  if (/хийд|сүм/i.test(type)) return 'monastery';
+  if (/хөшөө|дурсгал/i.test(type)) return 'monument';
+  if (/археологи|балгас|туурь/i.test(type)) return 'archaeological site';
+  return 'landmark';
 }
 
-function fallbackCard(q: string, image: string) {
-  const label = q.length > 56 ? `${q.slice(0, 54)}…` : q;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
-    <image href="${xml(image)}" width="1200" height="675" preserveAspectRatio="xMidYMid slice"/>
-    <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="38%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#090b0e" stop-opacity=".94"/></linearGradient></defs>
-    <rect width="1200" height="675" fill="url(#g)"/>
-    <circle cx="74" cy="580" r="24" fill="#E8B84B"/><path d="M74 562a16 16 0 0 0-16 16c0 12 16 29 16 29s16-17 16-29a16 16 0 0 0-16-16zm0 22a7 7 0 1 1 0-14 7 7 0 0 1 0 14z" fill="#132a1f"/>
-    <text x="116" y="590" fill="#fff" font-family="Arial,sans-serif" font-size="34" font-weight="700">${xml(label)}</text>
-    <text x="116" y="630" fill="#E8B84B" font-family="Arial,sans-serif" font-size="18" font-weight="700" letter-spacing="3">ATLAS · MONGOLIA</text>
-  </svg>`;
-  return new NextResponse(svg, {
-    headers: {
-      'Content-Type': 'image/svg+xml; charset=utf-8',
-      'Cache-Control': 'public, s-maxage=604800, stale-while-revalidate=2592000',
-    },
+function usable(page: any) {
+  const info = page?.imageinfo?.[0];
+  const text = `${page?.title || ''} ${info?.extmetadata?.ImageDescription?.value || ''}`;
+  return info?.mime?.startsWith('image/')
+    && BITMAP.test(String(page?.title || '').replace(/^File:/, ''))
+    && !NON_GROUND.test(text);
+}
+
+async function commonsPages(params: Record<string, string>) {
+  const api = new URL('https://commons.wikimedia.org/w/api.php');
+  Object.entries({
+    action: 'query', prop: 'imageinfo', iiprop: 'url|mime|extmetadata',
+    iiurlwidth: '1200', format: 'json', origin: '*', ...params,
+  }).forEach(([key, value]) => api.searchParams.set(key, value));
+  const res = await fetch(api, {
+    headers: { 'User-Agent': 'AtlasMongoliaMap/1.0 (heritage image resolver)' },
+    next: { revalidate: 604800 },
   });
-}
-
-function verifiedPlaceholder(q: string) {
-  const label = q.length > 56 ? `${q.slice(0, 54)}…` : q;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
-    <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#27352f"/><stop offset=".52" stop-color="#18201d"/><stop offset="1" stop-color="#0b0d0c"/></linearGradient><pattern id="p" width="42" height="42" patternUnits="userSpaceOnUse"><path d="M42 0H0v42" fill="none" stroke="#fff" stroke-opacity=".035"/></pattern></defs>
-    <rect width="1200" height="675" fill="url(#bg)"/><rect width="1200" height="675" fill="url(#p)"/><path d="M0 500 190 365l120 78 185-205 166 176 120-106 199 192 220-159v334H0Z" fill="#e8b84b" fill-opacity=".09"/>
-    <circle cx="78" cy="548" r="29" fill="#E8B84B"/><path d="M78 526a20 20 0 0 0-20 20c0 15 20 37 20 37s20-22 20-37a20 20 0 0 0-20-20zm0 28a9 9 0 1 1 0-18 9 9 0 0 1 0 18z" fill="#132a1f"/>
-    <text x="130" y="554" fill="#fff" font-family="Arial,sans-serif" font-size="34" font-weight="700">${xml(label)}</text><text x="130" y="600" fill="#E8B84B" font-family="Arial,sans-serif" font-size="18" font-weight="700" letter-spacing="3">ATLAS · БАТАЛГААЖУУЛСАН БАЙРШИЛ</text>
-  </svg>`;
-  return new NextResponse(svg, { headers: { 'Content-Type': 'image/svg+xml; charset=utf-8', 'Cache-Control': 'public, s-maxage=604800, stale-while-revalidate=2592000' } });
+  if (!res.ok) return [];
+  const json = await res.json();
+  return (Object.values(json?.query?.pages || {}) as any[]).filter(usable);
 }
 
 // Resolves one heritage pin to its own Commons result. The browser/CDN caches
@@ -42,39 +52,48 @@ function verifiedPlaceholder(q: string) {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const q = (searchParams.get('q') || '').trim().slice(0, 180);
-  const fallback = searchParams.get('fallback') || FALLBACK;
-  const strict = searchParams.get('strict') === '1';
-  if (!q) return NextResponse.redirect(fallback, 307);
+  const aimag = (searchParams.get('aimag') || '').trim().slice(0, 80);
+  const type = (searchParams.get('type') || '').trim().slice(0, 100);
+  const lat = Number(searchParams.get('lat'));
+  const lng = Number(searchParams.get('lng'));
+  if (!q) return new NextResponse(null, { status: 404 });
   try {
-    const api = new URL('https://commons.wikimedia.org/w/api.php');
-    api.searchParams.set('action', 'query');
-    api.searchParams.set('generator', 'search');
-    api.searchParams.set('gsrsearch', `${q} Mongolia filetype:bitmap`);
-    api.searchParams.set('gsrnamespace', '6');
-    api.searchParams.set('gsrlimit', '8');
-    api.searchParams.set('prop', 'imageinfo');
-    api.searchParams.set('iiprop', 'url|mime');
-    api.searchParams.set('iiurlwidth', '1200');
-    api.searchParams.set('format', 'json');
-    api.searchParams.set('origin', '*');
-    const res = await fetch(api, {
-      headers: { 'User-Agent': 'AtlasMongoliaMap/1.0 (heritage image resolver)' },
-      next: { revalidate: 604800 },
+    let pages = await commonsPages({
+      generator: 'search', gsrsearch: `${q} Mongolia filetype:bitmap`,
+      gsrnamespace: '6', gsrlimit: '20',
     });
-    if (!res.ok) throw new Error(`Commons ${res.status}`);
-    const json = await res.json();
-    const pages = Object.values(json?.query?.pages || {}) as any[];
-    const hit = pages
-      .filter((p) => p?.imageinfo?.[0]?.mime?.startsWith('image/'))
-      .filter((p) => BITMAP.test(String(p.title || '').replace(/^File:/, '')))
-      .sort((a, b) => Number(a.index || 999) - Number(b.index || 999))[0];
-    if (!hit) return strict ? verifiedPlaceholder(q) : fallbackCard(q, fallback);
+    // Commons descriptions and filenames are often English even when the
+    // pin's canonical display name is Mongolian. Search the same province and
+    // subject before widening spatially; this is what resolves e.g. Khentii's
+    // museum without using an unrelated country-wide stock landscape.
+    if (!pages.length && aimag) {
+      pages = await commonsPages({
+        generator: 'search',
+        gsrsearch: `${AIMAG_EN[aimag] || aimag} ${subjectEn(type)} Mongolia filetype:bitmap`,
+        gsrnamespace: '6', gsrlimit: '30',
+      });
+    }
+    // When the exact Mongolian name has no Commons result, use the nearest
+    // geotagged ground photograph. Start local, then expand only as far as
+    // needed for sparse rural Commons coverage. Space/aerial/map files remain
+    // excluded by usable() at every radius.
+    if (!pages.length && Number.isFinite(lat) && Number.isFinite(lng)) {
+      for (const radius of [10000, 50000, 100000]) {
+        pages = await commonsPages({
+          generator: 'geosearch', ggsprimary: 'all', ggsnamespace: '6',
+          ggscoord: `${lat}|${lng}`, ggsradius: String(radius), ggslimit: '100',
+        });
+        if (pages.length) break;
+      }
+    }
+    const hit = pages.sort((a, b) => Number(a.index || 999) - Number(b.index || 999))[0];
+    if (!hit) return new NextResponse(null, { status: 404, headers: { 'Cache-Control': 'public, s-maxage=3600' } });
     const image = hit.imageinfo[0]?.thumburl || hit.imageinfo[0]?.url;
     return NextResponse.redirect(image, {
       status: 307,
       headers: { 'Cache-Control': 'public, s-maxage=604800, stale-while-revalidate=2592000' },
     });
   } catch {
-    return strict ? verifiedPlaceholder(q) : fallbackCard(q, fallback);
+    return new NextResponse(null, { status: 404 });
   }
 }

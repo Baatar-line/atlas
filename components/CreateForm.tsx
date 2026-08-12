@@ -761,11 +761,11 @@ export default function CreateForm({ kind, mode = 'create', initial, lockedConta
               <div className={`grid gap-3 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
                 <label className="flex flex-col gap-1.5">
                   <span className={labelSpanClass}>Instagram</span>
-                  <input value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder="instagram.com/skylounge21" className={`${inputClass} ${inputFontClass}`} />
+                  <input type="url" value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder="https://instagram.com/skylounge21" className={`${inputClass} ${inputFontClass}`} />
                 </label>
                 <label className="flex flex-col gap-1.5">
                   <span className={labelSpanClass}>Facebook</span>
-                  <input value={facebook} onChange={(e) => setFacebook(e.target.value)} placeholder="facebook.com/skylounge21" className={`${inputClass} ${inputFontClass}`} />
+                  <input type="url" value={facebook} onChange={(e) => setFacebook(e.target.value)} placeholder="https://facebook.com/skylounge21" className={`${inputClass} ${inputFontClass}`} />
                 </label>
               </div>
               {/* The asterisk sits on the pair rather than on either field —
@@ -856,11 +856,11 @@ export default function CreateForm({ kind, mode = 'create', initial, lockedConta
               <div className={`grid gap-3 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
                 <label className="flex flex-col gap-1.5">
                   <span className={labelSpanClass}>Instagram</span>
-                  <input value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder="instagram.com/yourevent" className={`${inputClass} ${inputFontClass}`} />
+                  <input type="url" value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder="https://instagram.com/yourevent" className={`${inputClass} ${inputFontClass}`} />
                 </label>
                 <label className="flex flex-col gap-1.5">
                   <span className={labelSpanClass}>Facebook</span>
-                  <input value={facebook} onChange={(e) => setFacebook(e.target.value)} placeholder="facebook.com/yourevent" className={`${inputClass} ${inputFontClass}`} />
+                  <input type="url" value={facebook} onChange={(e) => setFacebook(e.target.value)} placeholder="https://facebook.com/yourevent" className={`${inputClass} ${inputFontClass}`} />
                 </label>
               </div>
               {/* Same pairing as the place form above — either one satisfies it. */}
