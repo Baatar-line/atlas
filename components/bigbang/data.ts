@@ -688,6 +688,79 @@ export const TRAVEL_APPS: TravelApp[] = [
   { slug: 'drive-mongolia', icon: Route, name: 'Drive Mongolia', mn: 'Өөрөө жолоодох & хөтөчтэй аялал', en: 'Self-drive & guided tours', url: 'https://www.drivemongolia.com/?utm_source=chatgpt.com' },
 ];
 
+// Mongol Empire timeline shown over the /globe globe. This is the caption side
+// only — the territory outline for each year lives in public/assets/globe-engine.js
+// (MONGOL_ERAS), which paints it into the globe texture; `legend` colours here
+// are the same hex values that file uses, so the two must be edited together.
+export interface EraLegend { label: string; labelEn: string; color: string; }
+export interface Era { year: number; mn: string; en: string; legend?: EraLegend[]; }
+export const MONGOL_ERAS: Era[] = [
+  { year: 1206, mn: 'Чингис хаан гүрнээ байгуулав', en: 'Genghis Khan founds the empire' },
+  { year: 1227, mn: 'Чингис хааныг нас барахад ~13 сая км²', en: 'At Genghis Khan\'s death — about 13 million km²' },
+  { year: 1241, mn: 'Легницийн тулалдаан — Европ руу хамгийн гүн нэвтрэлт', en: 'Battle of Legnica — the deepest push into Europe',
+    legend: [
+      { label: 'Эзэмшил нутаг', labelEn: 'Held territory', color: '#E8B84B' },
+      { label: 'Аян дайны хүрсэн зурвас', labelEn: 'Campaign reach', color: '#E8B84B' },
+    ] },
+  { year: 1260, mn: 'Толуйн үеийн иргэний дайн — гүрэн дөрвөн улс болж хуваагдаж эхлэв', en: 'Toluid civil war — the empire begins splitting into four states',
+    legend: [
+      { label: 'Юань', labelEn: 'Yuan', color: '#E8B84B' },
+      { label: 'Алтан Орд', labelEn: 'Golden Horde', color: '#6FA8DC' },
+      { label: 'Цагадайн улс', labelEn: 'Chagatai Khanate', color: '#8FD14F' },
+      { label: 'Ил хант улс', labelEn: 'Ilkhanate', color: '#D9705A' },
+    ] },
+  { year: 1279, mn: 'Нутаг дэвсгэрийн оргил үе — Номхон далайгаас Дунай мөрөн хүртэл', en: 'Territorial peak — from the Pacific to the Danube' },
+  { year: 1368, mn: 'Юань Хятадаас ухарсан ч Манжуур үлдэв — Монгол улсын сүүлчийн далайн гарц (1387 он хүртэл)', en: 'The Yuan fall back from China but keep Manchuria — the last sea coast a Mongol state held (until 1387)',
+    legend: [
+      { label: 'Умард Юань', labelEn: 'Northern Yuan', color: '#E8B84B' },
+      { label: 'Далайн гарц — Бохай, Японы тэнгис', labelEn: 'Sea access — Bohai, Sea of Japan', color: '#4FC3E8' },
+    ] },
+];
+
+// The ten largest empires in history, in the order of that ranking. `id` keys
+// into public/assets/empires.json (built by scripts/build-empires.mjs) for the
+// shape drawn on the globe; `color` is passed to the engine and reused for the
+// button, so the pill and the territory always read as the same thing.
+//
+// `area` is the commonly cited peak figure, which is not the same number as
+// the area of the polygon on screen — historical outlines are generalized and
+// their sources disagree by a few percent. The caption says "≈" for that
+// reason.
+// `approx` marks the five whose outline is hand-drawn rather than lifted from
+// the dataset — it has no feature for them, or draws them at a third of their
+// cited size. The caption says so rather than passing a sketch off as a survey.
+// `peakYear` is the same date as `peak`, as a number (negative for BC) — it
+// decides which parts of the world are washed out as still unknown when this
+// empire alone is on the globe (see CONTACT_YEAR in globe-engine.js).
+export interface TopEmpire { id: string; rank: number; short: string; shortEn: string; mn: string; en: string; peak: string; peakYear: number; area: string; color: string; approx?: boolean; }
+export const TOP_EMPIRES: TopEmpire[] = [
+  { id: 'british', rank: 1, short: 'Британи', shortEn: 'British', mn: 'Британийн эзэнт гүрэн', en: 'British Empire', peakYear: 1920, peak: '1920', area: '~35.5 сая км²', color: '#E05C5C' },
+  { id: 'mongol', rank: 2, short: 'Монгол', shortEn: 'Mongol', mn: 'Монголын эзэнт гүрэн', en: 'Mongol Empire', peakYear: 1270, peak: '1270–1309', area: '~24.0 сая км²', color: '#E8B84B' },
+  { id: 'russian', rank: 3, short: 'Орос', shortEn: 'Russian', mn: 'Оросын эзэнт гүрэн', en: 'Russian Empire', peakYear: 1895, peak: '1895', area: '~22.8 сая км²', color: '#6FA8DC' },
+  { id: 'qing', rank: 4, short: 'Чин', shortEn: 'Qing', mn: 'Чин улс (Манж)', en: 'Qing dynasty', peakYear: 1790, peak: '1790', area: '~14.7 сая км²', color: '#8FD14F' },
+  { id: 'spanish', rank: 5, short: 'Испани', shortEn: 'Spanish', mn: 'Испанийн эзэнт гүрэн', en: 'Spanish Empire', peakYear: 1810, peak: '1810', area: '~13.7 сая км²', color: '#E0973F' },
+  { id: 'french', rank: 6, short: 'Франц', shortEn: 'French', mn: 'Францын II колончлолын гүрэн', en: 'Second French colonial empire', peakYear: 1920, peak: '1920', area: '~11.5 сая км²', color: '#9B8CE8' },
+  { id: 'umayyad', rank: 7, short: 'Умайяд', shortEn: 'Umayyad', mn: 'Умайядын Халифат', en: 'Umayyad Caliphate', peakYear: 720, peak: '720', area: '~11.1 сая км²', color: '#46C4A8' },
+  { id: 'abbasid', rank: 8, short: 'Аббасид', shortEn: 'Abbasid', mn: 'Аббасидын Халифат', en: 'Abbasid Caliphate', peakYear: 750, peak: '750', area: '~11.1 сая км²', color: '#C9C24A' },
+  { id: 'yuan', rank: 9, short: 'Юань', shortEn: 'Yuan', mn: 'Юань улс', en: 'Yuan dynasty', peakYear: 1310, peak: '1310', area: '~11.0 сая км²', color: '#E88BB0' },
+  { id: 'portuguese', rank: 10, short: 'Португал', shortEn: 'Portuguese', mn: 'Португалийн эзэнт гүрэн', en: 'Portuguese Empire', peakYear: 1815, peak: '1815', area: '~10.4 сая км²', color: '#C08A4F' },
+  { id: 'turk', rank: 11, short: 'Түрэг', shortEn: 'Türk', mn: 'Түрэгийн хаант улс', en: 'Turkic Khaganate', peakYear: 557, peak: '557', area: '~10 сая км²', color: '#7FD1E8', approx: true },
+  { id: 'xiongnu', rank: 12, short: 'Хүннү', shortEn: 'Xiongnu', mn: 'Хүннү гүрэн', en: 'Xiongnu Empire', peakYear: -176, peak: 'МЭӨ 176', area: '~9 сая км²', color: '#E8C77F', approx: true },
+  { id: 'brazilian', rank: 13, short: 'Бразил', shortEn: 'Brazilian', mn: 'Бразилийн эзэнт гүрэн', en: 'Empire of Brazil', peakYear: 1889, peak: '1889', area: '~8.5 сая км²', color: '#5FBF8A' },
+  { id: 'french1', rank: 14, short: 'Франц I', shortEn: 'French I', mn: 'Францын I колончлолын гүрэн', en: 'First French colonial empire', peakYear: 1750, peak: '1750', area: '~8 сая км²', color: '#8C9BE8', approx: true },
+  { id: 'japanese', rank: 15, short: 'Япон', shortEn: 'Japanese', mn: 'Японы эзэнт гүрэн', en: 'Empire of Japan', peakYear: 1942, peak: '1942', area: '~7.4 сая км²', color: '#E86B6B', approx: true },
+  { id: 'han', rank: 16, short: 'Хань', shortEn: 'Han', mn: 'Хань улс', en: 'Han dynasty', peakYear: 100, peak: 'МЭ 100', area: '~6.5 сая км²', color: '#D9A441' },
+  { id: 'ming', rank: 17, short: 'Мин', shortEn: 'Ming', mn: 'Мин улс', en: 'Ming dynasty', peakYear: 1450, peak: '1450', area: '~6.5 сая км²', color: '#A3D14F' },
+  { id: 'rashidun', rank: 18, short: 'Рашидун', shortEn: 'Rashidun', mn: 'Рашидуны Халифат', en: 'Rashidun Caliphate', peakYear: 655, peak: '655', area: '~6.4 сая км²', color: '#4FC48C', approx: true },
+  { id: 'goldenhorde', rank: 19, short: 'Алтан Орд', shortEn: 'Golden Horde', mn: 'Алтан Орд', en: 'Golden Horde', peakYear: 1310, peak: '1310', area: '~6.0 сая км²', color: '#6FA8DC' },
+  { id: 'achaemenid', rank: 20, short: 'Ахеменид', shortEn: 'Achaemenid', mn: 'Ахеменидийн Перс', en: 'Achaemenid Persia', peakYear: -500, peak: 'МЭӨ 500', area: '~5.5 сая км²', color: '#C98FE0' },
+  { id: 'tang', rank: 21, short: 'Тан', shortEn: 'Tang', mn: 'Тан улс', en: 'Tang dynasty', peakYear: 715, peak: '715', area: '~5.4 сая км²', color: '#E8A05C' },
+  { id: 'macedon', rank: 22, short: 'Македон', shortEn: 'Macedon', mn: 'Македон (Александр)', en: 'Macedon (Alexander)', peakYear: -323, peak: 'МЭӨ 323', area: '~5.2 сая км²', color: '#5CC9C0' },
+  { id: 'ottoman', rank: 23, short: 'Осман', shortEn: 'Ottoman', mn: 'Османы эзэнт гүрэн', en: 'Ottoman Empire', peakYear: 1683, peak: '1683', area: '~5.2 сая км²', color: '#8FD14F' },
+  { id: 'maurya', rank: 24, short: 'Маурья', shortEn: 'Maurya', mn: 'Маурьягийн эзэнт гүрэн', en: 'Maurya Empire', peakYear: -250, peak: 'МЭӨ 250', area: '~5.0 сая км²', color: '#E8B84B' },
+  { id: 'roman', rank: 25, short: 'Ром', shortEn: 'Rome', mn: 'Ромын эзэнт гүрэн', en: 'Roman Empire', peakYear: 117, peak: 'МЭ 117', area: '~5.0 сая км²', color: '#D96B5C' },
+];
+
 export interface CatItem { name: string; meta: string; sub: string; aimag?: string; hours?: string; phone?: string; desc?: string; access?: boolean; img?: string; images?: string[]; id?: number; lat?: number; lng?: number; mapUrl?: string; instagramUrl?: string; instagramName?: string; facebookUrl?: string; facebookName?: string; contactEmail?: string; }
 export interface Cat {
   slug: string; num: string; name: string; nameEn: string; desc: string; descEn: string;

@@ -19,7 +19,7 @@ import CompleteProfileForm, { type ProfileInfo } from '../CompleteProfileForm';
 import ConfirmSubmitOtp from '../ConfirmSubmitOtp';
 import CreateSuccessCard from '../CreateSuccessCard';
 import {
-  ratingOf, STR, CATS, FAQ, TEAM, SUGGESTS, TRAVEL_APPS, sitesFor, AIMAGS, AIMAG_MN_SCRIPT,
+  ratingOf, STR, CATS, FAQ, TEAM, SUGGESTS, TRAVEL_APPS, sitesFor, AIMAGS, AIMAG_MN_SCRIPT, MONGOL_ERAS, TOP_EMPIRES,
   GEO_MN, LABEL_OFF, AIMAG_BG,
   catBgOf, itemThumbOf, aimagName, isAccessible, imgUrl, isVideoUrl, xyToLonLat, mapsUrlFor,
   type Pin, type CatItem, type Cat, type CountrySiteRow,
@@ -42,6 +42,14 @@ const e = React.createElement;
 
 // Sunflower/phyllotaxis scatter angle — see syncMainMap's pin placement.
 const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
+
+// How many of the 25 empires may be on the globe at once (see globeEmpires).
+const GLOBE_EMPIRE_MAX = 5;
+// ids → what GlobeEngine.setEmpires wants, in the order they were picked.
+const empireSel = (ids: string[]) => ids
+  .map((id) => TOP_EMPIRES.find((x) => x.id === id))
+  .filter(Boolean)
+  .map((x) => ({ id: x!.id, color: x!.color }));
 
 const EVENT_MONTHS_MN = ['1-р сар', '2-р сар', '3-р сар', '4-р сар', '5-р сар', '6-р сар', '7-р сар', '8-р сар', '9-р сар', '10-р сар', '11-р сар', '12-р сар'];
 
@@ -178,6 +186,7 @@ export default class BigBangLayout extends React.Component<Props, any> {
     pin: -1, favs: {}, joined: {}, attendCounts: {}, mapAimag: null, hoverAimag: null,
     spNeeds: false, bigText: false, globeCountry: null, globeHover: null, globeFilter: null,
     globeQuery: '', globeReady: false, countrySites: [] as CountrySiteRow[], globeActiveSite: null as number | null,
+    globeEra: null as number | null, globeEmpireIds: [] as string[], globeTimelineTab: 'mongol' as 'mongol' | 'top',
     showScenicForm: false,
     showEventForm: false,
     showPlaceForm: false,
@@ -702,6 +711,10 @@ export default class BigBangLayout extends React.Component<Props, any> {
       onReady: () => {
         try { this.setState({ globeReady: true }); } catch (err) { /* ignore */ }
         if (this.state.mongoliaFlagOverride) eng.setMongoliaFlag(this.state.mongoliaFlagOverride);
+        // Survives a remount (navigating off /globe and back) — the year
+        // buttons keep their state in React, the engine is rebuilt from zero.
+        if (this.state.globeEra) eng.setEmpireYear(this.state.globeEra);
+        if (this.state.globeEmpireIds.length) eng.setEmpires(empireSel(this.state.globeEmpireIds))?.catch?.(() => { /* ignore */ });
       },
       onHover: (name: string) => { if (name !== this.state.globeHover) this.setState({ globeHover: name }); },
       onSelect: (name: string) => this.setState({ globeCountry: name ? window.resolveCountry(name) : null, globeActiveSite: null }),
@@ -2092,6 +2105,99 @@ export default class BigBangLayout extends React.Component<Props, any> {
       globeActiveSite: this.state.globeActiveSite,
       globeSelectSite: (position: number) => { this.setState({ globeActiveSite: position }); if (this.globeEngine) this.globeEngine.setActiveSite(position); },
       globeCloseCard: () => { this.setState({ globeCountry: null, globeActiveSite: null }); if (this.globeEngine) this.globeEngine.clearSelection(); },
+      // Mongol Empire timeline. Pressing the year that is already on turns the
+      // overlay off again, so the plain archive globe is always one tap away.
+      globeEraYear: this.state.globeEra,
+      globeEras: MONGOL_ERAS.map((e) => ({
+        year: e.year,
+        on: this.state.globeEra === e.year,
+        set: () => {
+          const next = this.state.globeEra === e.year ? null : e.year;
+          this.setState({ globeEra: next, globeQuery: '' });
+          if (this.globeEngine) this.globeEngine.setEmpireYear(next);
+        },
+      })),
+      globeEraNote: (() => { const e = MONGOL_ERAS.find((x) => x.year === this.state.globeEra); return e ? (lang === 'en' ? e.en : e.mn) : ''; })(),
+      // Two tabs over one bar: the Mongol timeline (hand-drawn years) and the
+      // ten largest empires (real historical borders, empires.json). Only one
+      // overlay is ever on the globe, so switching tabs clears the other.
+      globeTab: this.state.globeTimelineTab,
+      globeSetTab: (tab: 'mongol' | 'top') => {
+        if (this.state.globeTimelineTab === tab) return;
+        this.setState({ globeTimelineTab: tab, globeEra: null, globeEmpireIds: [] });
+        if (this.globeEngine) { this.globeEngine.setEmpireYear(null); this.globeEngine.setEmpires([]); }
+      },
+      globeTabs: [
+        { id: 'mongol', label: lang === 'en' ? 'Mongol Empire' : 'Монголын эзэнт гүрэн', on: this.state.globeTimelineTab === 'mongol' },
+        { id: 'top', label: lang === 'en' ? `Largest ${TOP_EMPIRES.length}` : `Хамгийн том ${TOP_EMPIRES.length}`, on: this.state.globeTimelineTab === 'top' },
+      ],
+      // Up to five at a time, which is what the globe can carry before the
+      // translucent fills stop being separable. At five, the unpicked pills go
+      // inert until one is switched off — dropping the oldest to make room
+      // silently erased an empire the viewer had deliberately put there.
+      globeEmpireMax: GLOBE_EMPIRE_MAX,
+      globeEmpireFull: this.state.globeEmpireIds.length >= GLOBE_EMPIRE_MAX,
+      globeEmpires: TOP_EMPIRES.map((e) => ({
+        id: e.id,
+        rank: e.rank,
+        label: lang === 'en' ? e.shortEn : e.short,
+        color: e.color,
+        on: this.state.globeEmpireIds.includes(e.id),
+        disabled: !this.state.globeEmpireIds.includes(e.id) && this.state.globeEmpireIds.length >= GLOBE_EMPIRE_MAX,
+        set: () => {
+          const cur: string[] = this.state.globeEmpireIds;
+          if (!cur.includes(e.id) && cur.length >= GLOBE_EMPIRE_MAX) return;   // full — switch one off first
+          const next = cur.includes(e.id) ? cur.filter((id) => id !== e.id) : [...cur, e.id];
+          this.setState({ globeEmpireIds: next, globeQuery: '' });
+          if (this.globeEngine) {
+            this.globeEngine.setEmpires(empireSel(next))?.catch?.((err: any) => console.warn('empire layer failed', err));
+          }
+        },
+      })),
+      // One row per selected empire — with five on the globe at once, the
+      // caption is the only thing saying which colour is which.
+      globeEmpireLegend: (this.state.globeEmpireIds as string[])
+        .map((id) => TOP_EMPIRES.find((x) => x.id === id))
+        .filter((e): e is typeof TOP_EMPIRES[number] => !!e)
+        .map((e) => ({
+          id: e.id,
+          color: e.color,
+          rank: e.rank,
+          name: lang === 'en' ? e.en : e.mn,
+          peak: lang === 'en' ? e.peak.replace('МЭӨ', 'BC').replace('МЭ', 'AD') : e.peak,
+          area: lang === 'en' ? e.area.replace('сая км²', 'million km²') : e.area,
+          // Said out loud on the hand-drawn ones rather than left for the
+          // viewer to assume the outline is as exact as the others'.
+          approx: e.approx ? (lang === 'en' ? 'approx.' : 'ойролцоо') : '',
+        })),
+      // Only with exactly one empire on the globe, and only when there was
+      // still something left to find: at 1920 the map is complete and nothing
+      // is washed out, so the note would be explaining an effect that isn't
+      // on screen. 1820 is the last of the contact dates (Antarctica).
+      globeUndiscoveredNote: (() => {
+        if (this.state.globeEmpireIds.length !== 1) return '';
+        const e = TOP_EMPIRES.find((x) => x.id === this.state.globeEmpireIds[0]);
+        if (!e || e.peakYear >= 1820) return '';
+        return lang === 'en'
+          ? 'Dimmed: lands the Old World had not yet reached in this empire\'s time'
+          : 'Бүдэг нутаг: тухайн үед Хуучин ертөнцөд хараахан танигдаагүй байсан газар';
+      })(),
+      globeEmpireHint: (() => {
+        const n = this.state.globeEmpireIds.length;
+        if (!n) return '';
+        if (n >= GLOBE_EMPIRE_MAX) {
+          return lang === 'en'
+            ? `${n}/${GLOBE_EMPIRE_MAX} — switch one off to add another`
+            : `${n}/${GLOBE_EMPIRE_MAX} — шинийг нэмэхийн тулд нэгийг нь унтраа`;
+        }
+        return lang === 'en'
+          ? `${n}/${GLOBE_EMPIRE_MAX} selected — press again to remove`
+          : `${n}/${GLOBE_EMPIRE_MAX} сонгосон — дахин дарвал арилна`;
+      })(),
+      globeEraLegend: (() => {
+        const e = MONGOL_ERAS.find((x) => x.year === this.state.globeEra);
+        return (e?.legend || []).map((l, i) => ({ label: lang === 'en' ? l.labelEn : l.label, color: l.color, dashed: e!.year === 1241 && i === 1 }));
+      })(),
       a11yClass: this.state.bigText ? 'bb-hc' : '',
       toggleSp: () => { const v = !this.state.spNeeds; try { localStorage.setItem('bb_sp', v ? '1' : '0'); } catch (err) { /* */ } this.setState({ spNeeds: v }); },
       toggleBig: () => { const v = !this.state.bigText; try { localStorage.setItem('bb_big', v ? '1' : '0'); } catch (err) { /* */ } this.setState({ bigText: v }); },

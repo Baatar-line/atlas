@@ -11,6 +11,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:generate": "prisma generate",
     "prisma:studio": "prisma studio",
+    "build:empires": "node scripts/build-empires.mjs",
     "seed": "bun run prisma/seed.ts",
     "seed:coop-games": "bun run prisma/seed-coop-games.ts",
     "seed:boardgames": "bun run prisma/seed-boardgames.ts",

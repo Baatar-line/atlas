@@ -26,6 +26,134 @@ function SiteCard({ s, active, onSelect, sizeClass = 'h-[clamp(96px,10vw,140px)]
   );
 }
 
+// The history bar under the globe: two tabs over one strip, because both of
+// them drive the overlay on the same globe, and thirty pills at once would
+// take a third of a phone screen.
+//
+//   Монголын эзэнт гүрэн — the five dates of the Mongol timeline, one at a time
+//   Хамгийн том 25       — the 25 largest empires, up to five on the globe at once
+//
+// Same component on phone and desktop since it is the same control; only the
+// wrapper's position differs, which is what `className` carries. Pills sit in
+// a scroll rail rather than wrapping — 25 of them wrap to five ragged rows at
+// 360px, and a rail keeps the caption directly under the row it explains.
+function HistoryBar({ V, className }: { V: any; className: string }) {
+  const empires = V.globeTab === 'top';
+  const note = V.globeEraNote;
+  return (
+    <div className={className}>
+      <div className="rounded-2xl border border-[#2c2c2c] bg-[rgba(14,14,14,.88)] px-3 py-2.5 shadow-[0_18px_44px_rgba(0,0,0,.6)] backdrop-blur-[12px]">
+        <div className="mb-2.5 flex items-center justify-center gap-1">
+          {(V.globeTabs || []).map((t: any) => (
+            <button
+              key={t.id}
+              onClick={() => V.globeSetTab(t.id)}
+              aria-pressed={t.on}
+              className={`cursor-pointer rounded-full border px-3 py-[5px] text-[10px] font-bold uppercase tracking-[.08em] transition-colors duration-200 ${t.on ? 'border-[rgba(255,255,255,.16)] bg-[rgba(255,255,255,.09)] text-[#f2f2f2]' : 'border-transparent bg-transparent text-[rgba(242,237,227,.4)] hover:text-[#cfcfcf]'}`}
+            >{t.label}</button>
+          ))}
+        </div>
+
+        {/* justify-center on an overflowing flex row makes its first children
+            unreachable — the overflow spills off the left edge where scroll
+            can't go. Only the five-year row is short enough to be safe. */}
+        <div className={`bb-hscroll -mx-1 flex items-center gap-1.5 overflow-x-auto px-1 ${empires ? 'justify-start' : 'justify-center'}`}>
+          {empires
+            ? (V.globeEmpires || []).map((e: any) => (
+                <button
+                  key={e.id}
+                  onClick={e.set}
+                  aria-pressed={e.on}
+                  // Inert, not hidden, once five are on the globe: the pill
+                  // stays where it was so the row doesn't reshuffle, and dims
+                  // to say that this one is unavailable until a lit one is
+                  // switched back off. `disabled` also takes it out of the tab
+                  // order, so it can't be reached and pressed to no effect.
+                  disabled={e.disabled}
+                  title={e.disabled ? V.globeEmpireHint : undefined}
+                  style={e.on
+                    ? { borderColor: e.color, background: e.color, color: '#141414' }
+                    : { borderColor: '#3a3a3a' }}
+                  className={`flex-none rounded-full border px-3 py-[7px] text-[11.5px] font-bold transition-[color,opacity] duration-200 ${
+                    e.on
+                      ? 'cursor-pointer'
+                      : e.disabled
+                        ? 'cursor-not-allowed bg-[rgba(24,24,24,.55)] text-[#5a5a5a] opacity-45'
+                        : 'cursor-pointer bg-[rgba(24,24,24,.9)] text-[#bdbdbd] hover:text-[#f2f2f2]'
+                  }`}
+                >
+                  <span className="mr-1.5 font-[ui-monospace,SFMono-Regular,Menlo,monospace] text-[10px] opacity-60">{e.rank}</span>
+                  {e.label}
+                </button>
+              ))
+            : (V.globeEras || []).map((e: any) => (
+                <button
+                  key={e.year}
+                  onClick={e.set}
+                  aria-pressed={e.on}
+                  className={`flex-none cursor-pointer rounded-full border px-3.5 py-[7px] font-[ui-monospace,SFMono-Regular,Menlo,monospace] text-[12px] font-bold transition-colors duration-200 ${e.on ? 'border-[var(--accent,#E8B84B)] bg-[var(--accent,#E8B84B)] text-[#141414]' : 'border-[#3a3a3a] bg-[rgba(24,24,24,.9)] text-[#bdbdbd] hover:border-[var(--accent,#E8B84B)] hover:text-[#f2f2f2]'}`}
+                >{e.year}</button>
+              ))}
+        </div>
+
+        {!empires && note && <div className="mt-2.5 text-center text-[11.5px] leading-[1.45] text-[#9a9a9a]">{note}</div>}
+
+        {/* One row per selected empire. With up to five territories overlapping
+            on the globe, this list is what ties each colour to a name — and it
+            doubles as the comparison, since the peak year and area line up in
+            columns down the rows. */}
+        {empires && (V.globeEmpireLegend || []).length > 0 && (
+          <div className="mt-2.5 flex flex-col gap-[3px]">
+            {V.globeEmpireLegend.map((l: any) => (
+              <div key={l.id} className="flex items-center gap-2 text-[11px] leading-[1.5]">
+                <span className="h-[10px] w-[10px] flex-none rounded-[3px]" style={{ background: l.color }}></span>
+                {/* The rank is the one column a 320px phone can spare — the
+                    pills carry it too, and the rows are already in rank order. */}
+                <span className="hidden w-[18px] flex-none text-right font-[ui-monospace,SFMono-Regular,Menlo,monospace] text-[10px] text-[#6d6d6d] min-[420px]:inline">{l.rank}</span>
+                <span className="min-w-0 flex-1 truncate text-[#d8d8d8]">{l.name}</span>
+                {/* The year is the column being compared down the rows, so it
+                    gets its own fixed width, tabular figures and the brightest
+                    text of the three — right-aligned, 1270–1309 and 1920 line
+                    up under each other instead of drifting with the name. */}
+                <span className="w-[74px] flex-none text-right font-[ui-monospace,SFMono-Regular,Menlo,monospace] text-[12px] font-bold tabular-nums text-[#ededed]">{l.peak}</span>
+                <span className="w-[78px] flex-none text-right text-[10.5px] tabular-nums text-[#8a8a8a] min-[420px]:w-[92px]">{l.area}</span>
+                {l.approx && <span className="flex-none text-[9.5px] uppercase tracking-[.06em] text-[#5f5f5f]">{l.approx}</span>}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {empires && V.globeUndiscoveredNote && (
+          <div className="mt-2 flex items-center justify-center gap-1.5 text-[10px] text-[#6d6d6d]">
+            <span className="h-[9px] w-[14px] flex-none rounded-[3px] border border-[#3a3a3a] bg-[rgba(3,3,3,.72)]"></span>
+            {V.globeUndiscoveredNote}
+          </div>
+        )}
+
+        {empires && V.globeEmpireHint && (
+          <div className="mt-2 text-center text-[10px] tracking-[.04em] text-[#5f5f5f]">{V.globeEmpireHint}</div>
+        )}
+
+        {!empires && (V.globeEraLegend || []).length > 0 && (
+          <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5">
+            {V.globeEraLegend.map((l: any, i: number) => (
+              <span key={i} className="inline-flex items-center gap-1.5 text-[10.5px] text-[#8f8f8f]">
+                <span
+                  className="h-[9px] w-[14px] rounded-[3px]"
+                  style={l.dashed
+                    ? { border: `1.5px dashed ${l.color}`, background: 'transparent' }
+                    : { background: l.color, opacity: 0.85 }}
+                ></span>
+                {l.label}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function GlobePage() {
   const V: any = useContext(BigBangContext);
   useEffect(() => {
@@ -101,6 +229,11 @@ export default function GlobePage() {
               </div>
             </div>
           )}
+
+          {/* Above the bottom sheet is where this would like to live, but the
+              sheet is 6 cards tall and there is no room left over — so with a
+              country open it takes the slot the intro text vacates instead. */}
+          <HistoryBar V={V} className={`absolute inset-x-3 z-[9] ${V.globeHasCard ? 'top-[128px]' : 'bottom-4'}`} />
 
           {V.globeHasCard && (V.gcSites || []).length > 0 && (
             <div className="absolute inset-x-2 bottom-2 z-[8] rounded-2xl border border-[#2c2c2c] bg-[rgba(14,14,14,.94)] p-3 shadow-[0_18px_44px_rgba(0,0,0,.72)] backdrop-blur-[12px] [animation:bbCardIn_.4s_cubic-bezier(.22,.8,.3,1)_both]">
@@ -182,6 +315,9 @@ export default function GlobePage() {
           </div>
         )}
       </div>
+      {/* Bottom centre — the two card columns are pinned to the far left and
+          right edges, so this strip stays clear of both at every width. */}
+      <HistoryBar V={V} className="absolute left-1/2 bottom-10 z-[9] w-[min(620px,46vw)] -translate-x-1/2" />
       {V.globeShowHover && (
         <div className="absolute left-1/2 top-[88px] z-[6] -translate-x-1/2 pointer-events-none rounded-full border border-[#343434] bg-[rgba(25,25,25,.96)] px-4 py-[7px] font-[ui-monospace,SFMono-Regular,Menlo,monospace] text-[12px] font-semibold text-[#eeeeee] shadow-[0_8px_20px_rgba(0,0,0,.45)]">{V.globeHover}</div>
       )}

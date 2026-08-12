@@ -73,6 +73,142 @@
 
   var ATLAS_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
+  /* ── Mongol Empire era overlays ────────────────────────────────────────────
+     One entry per date on the /globe timeline.
+
+     What is actually drawn for these years now comes from empires.json (see
+     scripts/build-empires.mjs, which assembles each year out of the historical
+     borders of the states the empire held then). The rings kept here are the
+     fallback for the seconds before that file lands, and for a visitor whose
+     fetch of it fails — a stylized convex outline of the same territory, a few
+     dozen vertices each, which is what these years looked like before the real
+     geometry existed. `focus`/`zoom` are used the same way, as the camera
+     framing until the file's own framing replaces it.
+
+     `dashed` parts are campaign reach rather than held territory (1241's push
+     into Poland/Hungary was raided and withdrawn from, not administered), and
+     `label` is only set where one era shows several distinct states at once —
+     1260's four khanates — since every other year's caption is in the UI. */
+  var ERA_GOLD = "#E8B84B", ERA_BLUE = "#6FA8DC", ERA_GREEN = "#8FD14F", ERA_CLAY = "#D9705A";
+
+  var MONGOL_ERAS = [
+    { year: 1206, focus: [47, 104], zoom: 2.9, parts: [
+      { color: ERA_GOLD, ring: [[88,50],[92,52],[98,53],[104,53.5],[110,52.5],[116,50],[119,49],[120,47],[117,44],[112,42.5],[105,41.5],[98,42.5],[92,44.5],[88,46],[86,48]] }
+    ] },
+    { year: 1227, focus: [43, 88], zoom: 3.1, parts: [
+      { color: ERA_GOLD, ring: [[46,48],[48,52],[54,56],[62,58],[70,59],[80,59],[90,58],[100,56],[108,54],[116,52],[122,49],[126,46],[124,43],[120,41],[118,38.5],[114,36.5],[110,35],[105,34.5],[100,36],[95,38],[90,38.5],[85,40],[80,39],[74,37],[68,35],[62,34],[57,35.5],[54,37.5],[52,40],[49,44]] }
+    ] },
+    { year: 1241, focus: [45, 72], zoom: 3.35, parts: [
+      { color: ERA_GOLD, ring: [[29,51],[33,55],[39,57],[46,58],[54,58],[62,57],[70,58],[78,58],[86,57],[94,56],[102,55],[110,53],[118,51],[124,49],[127,46],[125,43],[121,41],[118,38.5],[114,36.5],[110,35],[105,34.5],[100,36],[95,38],[88,38],[82,38],[76,36.5],[70,35],[64,34],[58,35],[54,37],[50,40],[47,43],[44,45.5],[38,46],[33,47],[30,48]] },
+      { color: ERA_GOLD, alpha: 0.16, dashed: true, ring: [[16,51.5],[21,53],[26,53.5],[27,50],[25,47],[21,46],[17,48]] }
+    ] },
+    { year: 1260, focus: [43, 70], zoom: 3.45, parts: [
+      { color: ERA_GOLD, label: "YUAN", at: [43, 108], ring: [[85,49],[92,52],[100,54],[110,53],[118,52],[126,50],[132,48],[134,45],[130,42],[126,40],[122,38.5],[118,37],[112,35.5],[106,34],[100,33],[94,32],[88,32.5],[82,33.5],[79,35],[80,38],[82,42],[83,46]] },
+      { color: ERA_BLUE, label: "ALTAN ORD", at: [52, 45], ring: [[26,48],[28,52],[33,56],[38,58],[45,58],[52,57],[58,55],[64,53],[70,51],[73,48],[70,46],[64,45],[58,45],[52,45.5],[48,46.5],[45,44.5],[40,44],[36,45],[32,45.5],[28,46]] },
+      { color: ERA_GREEN, label: "TSAGADAI", at: [43, 68], ring: [[52,44],[58,47],[64,49],[70,50],[76,49],[82,47],[85,44],[84,40],[80,37],[74,36],[68,35.5],[62,37],[57,39],[53,41]] },
+      { color: ERA_CLAY, label: "IL KHAN", at: [32, 52], ring: [[36,40],[42,42],[46,44],[50,44],[55,43],[60,41],[65,38],[68,35],[69,32],[66,29],[61,26],[56,26.5],[50,29],[46,30],[43,33],[40,36],[36,37],[32,38],[28,39],[27,41],[31,41.5]] }
+    ] },
+    { year: 1279, focus: [40, 78], zoom: 3.5, parts: [
+      { color: ERA_GOLD, ring: [[22,49],[28,53],[34,57],[40,59],[48,58],[56,57],[64,56],[72,56],[80,56],[88,55],[96,54],[105,53],[114,52],[122,50],[130,49],[134,47],[132,44],[128,42],[124,40],[122,37],[121,33],[120,30],[119,26],[116,23],[112,21.5],[108,21],[104,22.5],[100,24],[98,26],[95,28],[91,28],[86,28.5],[81,30],[78,32],[74,33],[70,32],[68,29],[64,26],[58,26.5],[52,29],[47,30],[44,33],[40,36],[35,37],[30,38],[27,40],[28,43],[26,45],[22,47]] }
+    ] },
+    // 1368 — the Yuan lose China and fall back on the steppe, keeping Manchuria
+    // and with it the last coastline a Mongol state ever held. The fallback
+    // ring is the whole territory; only empires.json splits the sea band out.
+    { year: 1368, focus: [47, 115], zoom: 3.0, parts: [
+      { color: ERA_GOLD, ring: [[88,50],[95,53],[103,54],[112,53],[120,52],[128,51],[136,50],[141,49],[139,46],[133,44],[128,42],[124,41],[119,40.5],[112,41],[104,41],[96,42],[90,44],[86,47]] }
+    ] }
+  ];
+
+  // Straight lat/lng edges are what the equirectangular texture wants, but
+  // d3.geoPath resamples long segments along great circles, which bows a
+  // 20°-wide edge visibly poleward. Splitting each edge into ~2° steps first
+  // leaves nothing for that resampling to bend.
+  function densifyRing(ring, step) {
+    step = step || 2;
+    var out = [];
+    for (var i = 0; i < ring.length; i++) {
+      var a = ring[i], b = ring[(i + 1) % ring.length];
+      var n = Math.max(1, Math.ceil(Math.max(Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1])) / step));
+      for (var s = 0; s < n; s++) out.push([a[0] + (b[0] - a[0]) * (s / n), a[1] + (b[1] - a[1]) * (s / n)]);
+    }
+    out.push(out[0].slice());
+    return out;
+  }
+
+  // d3 treats polygons as spherical, so a ring wound the wrong way fills the
+  // whole planet *except* the empire. Cheaper to detect than to hand-verify
+  // the winding of every ring above: anything covering more than a hemisphere
+  // was meant to be its own complement.
+  function eraPolygon(ring) {
+    var geo = { type: "Polygon", coordinates: [densifyRing(ring)] };
+    if (d3.geoArea(geo) > 2 * Math.PI) geo.coordinates = [geo.coordinates[0].slice().reverse()];
+    return geo;
+  }
+
+  /* The ten largest empires in history — real historical borders, unlike the
+     hand-drawn Mongol timeline above. Built by scripts/build-empires.mjs from
+     github.com/aourednik/historical-basemaps into a ~60 KB file, fetched the
+     first time one of the buttons is pressed rather than on page load: most
+     visits to the globe never open the timeline at all. */
+  var EMPIRES_URL = "/assets/empires.json?v=5";   // bump with the file — see app/layout.tsx on why
+  var empireData = null;
+  var eraData = null;
+  var empirePending = null;
+
+  function loadEmpires() {
+    if (empireData) return Promise.resolve(empireData);
+    if (!empirePending) {
+      empirePending = fetch(EMPIRES_URL).then(function (r) {
+        if (!r.ok) throw new Error("empires.json: HTTP " + r.status);
+        return r.json();
+      }).then(function (j) { empireData = j.empires || {}; eraData = j.eras || {}; return empireData; })
+        .catch(function (err) { empirePending = null; throw err; });
+    }
+    return empirePending;
+  }
+
+  /* ── Lands still unknown to the Old World ─────────────────────────────────
+     When one empire is on the globe, everything that had not yet been reached
+     from Afro-Eurasia at that empire's peak is washed out: pick the Mongol
+     Empire and the Americas, Australia and Antarctica go dark, because nobody
+     in Karakorum in 1279 knew they were there.
+
+     Dates are first contact *from the Old World*, which is the perspective the
+     empires on this globe are drawn from — these places were of course long
+     inhabited, and several were settled thousands of years earlier. The named
+     ones are listed rather than derived, since a rule over coordinates puts
+     Indonesia (known and traded with for centuries) in the same bucket as its
+     neighbour New Guinea (sighted 1526). */
+  var CONTACT_YEAR = {
+    "Antarctica": 1820,
+    "Australia": 1606,
+    "New Zealand": 1642,
+    "Papua New Guinea": 1526,
+    "Solomon Is.": 1568,
+    "Vanuatu": 1606,
+    "New Caledonia": 1774,
+    "Fiji": 1643,
+    // Reached from Europe long before Columbus, so they are never washed out
+    // with the rest of the western hemisphere.
+    "Greenland": 986,
+    "Iceland": 874
+  };
+
+  // The Americas, by longitude — every remaining feature west of 25°W.
+  function contactYearOf(f) {
+    var name = f.properties.name;
+    if (CONTACT_YEAR[name] !== undefined) return CONTACT_YEAR[name];
+    var c;
+    try { c = d3.geoCentroid(f); } catch (e) { return -Infinity; }
+    if (c[0] < -25) return 1492;
+    return -Infinity;
+  }
+
+  function eraFor(year) {
+    for (var i = 0; i < MONGOL_ERAS.length; i++) if (MONGOL_ERAS[i].year === year) return MONGOL_ERAS[i];
+    return null;
+  }
+
   function GlobeEngine(mount, cb) {
     this.mount = mount;
     this.cb = cb || {};
@@ -98,6 +234,9 @@
     this.activeSite = null;
     this.flagImg = null;
     this.flagReady = false;
+    this.empireYear = null;
+    this.empireSel = [];
+    this.undiscoveredYear = null;
     this._cleanupPointer = function () {};
   }
 
@@ -299,8 +438,203 @@
       ctx.strokeStyle = isSel || isHov ? "rgba(8,8,8,.9)" : "rgba(8,8,8,.72)";
       ctx.stroke();
     }
+    this.drawUndiscovered(ctx, path);
+    this.drawEmpire(ctx, path);
     if (this.texture) this.texture.needsUpdate = true;
     this.refreshOutline();
+  };
+
+  // Between the country fills and the empire overlay: the wash has to cover
+  // the countries it fades, and the empire has to stay bright on top of it.
+  GlobeEngine.prototype.drawUndiscovered = function (ctx, path) {
+    var year = this.undiscoveredYear;
+    if (year === null || year === undefined || !isFinite(year)) return;
+    if (!this._contactYears) {
+      this._contactYears = this.features.map(contactYearOf);
+    }
+    ctx.save();
+    for (var i = 0; i < this.features.length; i++) {
+      if (year >= this._contactYears[i]) continue;
+      ctx.beginPath();
+      path(this.features[i]);
+      // A wash rather than a flat colour: the land keeps its shape and its
+      // borders, it just drops back to nearly the tone of the ocean around it.
+      ctx.fillStyle = "rgba(3,3,3,.72)";
+      ctx.fill();
+    }
+    ctx.restore();
+  };
+
+  // Painted last, on top of the country fills — the era layer is meant to read
+  // as an overlay across borders that mostly didn't exist yet, so it can't be
+  // interleaved with them.
+  GlobeEngine.prototype.drawEmpire = function (ctx, path) {
+    this.drawTopEmpire(ctx, path);
+    var era = eraFor(this.empireYear);
+    if (!era) return;
+    ctx.save();
+    // Real borders when empires.json has landed (it carries one entry per
+    // timeline year, each assembled from the states the empire actually held
+    // that year); the hand-drawn rings below are what's on screen for the
+    // moment before it arrives, and if the fetch fails.
+    var loaded = eraData && eraData[this.empireYear];
+    var parts = loaded ? loaded.parts : era.parts;
+    for (var i = 0; i < parts.length; i++) {
+      var part = parts[i];
+      ctx.beginPath();
+      path(loaded ? part.geometry : eraPolygon(part.ring));
+      ctx.globalAlpha = part.dashed ? 0.16 : 0.42;
+      ctx.fillStyle = part.color;
+      ctx.fill();
+      ctx.globalAlpha = part.dashed ? 0.75 : 1;
+      ctx.lineWidth = part.dashed ? 2 : 2.6;
+      ctx.setLineDash(part.dashed ? [12, 9] : []);
+      ctx.strokeStyle = part.color;
+      ctx.stroke();
+      ctx.setLineDash([]);
+      if (part.label && part.at) {
+        var p = path.projection()([part.at[1], part.at[0]]);
+        ctx.globalAlpha = 0.92;
+        ctx.font = "700 17px ui-monospace,SFMono-Regular,Menlo,monospace";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.lineWidth = 3.5;
+        ctx.strokeStyle = "rgba(3,3,3,.85)";
+        ctx.strokeText(part.label, p[0], p[1]);
+        ctx.fillStyle = part.color;
+        ctx.fillText(part.label, p[0], p[1]);
+      }
+    }
+    ctx.restore();
+  };
+
+  GlobeEngine.prototype.drawTopEmpire = function (ctx, path) {
+    if (!this.empireSel.length || !empireData) return;
+    // Largest first, so a small empire selected alongside one that contains it
+    // — Yuan inside the Mongol Empire, the Golden Horde inside it too — is
+    // drawn on top instead of vanishing under it.
+    var drawn = this.empireSel.filter(function (s) { return empireData[s.id]; }).slice().sort(function (a, b) {
+      return (empireData[b.id].citedAreaM || 0) - (empireData[a.id].citedAreaM || 0);
+    });
+    if (!drawn.length) return;
+    // Comparing five at once means five translucent fills stacked on the same
+    // continents, so the fill lightens as the selection grows and the outline
+    // carries more of the reading.
+    var alpha = drawn.length > 1 ? Math.max(0.2, 0.46 - 0.05 * drawn.length) : 0.46;
+    ctx.save();
+    for (var i = 0; i < drawn.length; i++) {
+      var emp = empireData[drawn[i].id];
+      ctx.beginPath();
+      path(emp.geometry);
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = drawn[i].color || ACCENT;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.lineWidth = 2.4;
+      ctx.strokeStyle = drawn[i].color || ACCENT;
+      ctx.stroke();
+    }
+    ctx.restore();
+  };
+
+  // Up to five empires at once, as [{ id, color }] — an empty list clears the
+  // overlay. The fetch is async, so the caller gets a promise back and the
+  // texture is rebuilt when the data lands; the buttons in the UI are already
+  // lit by then.
+  GlobeEngine.prototype.setEmpires = function (sel) {
+    var self = this;
+    this.empireSel = (sel || []).slice();
+    this.undiscoveredYear = null;
+    this._texDirty = true;
+    if (!this.empireSel.length) return Promise.resolve();
+    // Same reasoning as setEmpireYear: an open country card belongs to a
+    // border that has nothing to do with the empires now on screen.
+    this.empireYear = null;
+    var had = this.selName;
+    this.selName = null;
+    this.selLL = null;
+    this.hovName = null;
+    this.buildArchiveDots(null);
+    if (had && this.cb.onSelect) this.cb.onSelect(null);
+    var want = this.empireSel;
+    return loadEmpires().then(function () {
+      if (self.empireSel !== want) return;   // selection changed while loading
+      // Only with a single empire on the globe: with several selected they
+      // span different centuries, and one wash can't be true for all of them.
+      var one = want.length === 1 && empireData[want[0].id];
+      self.undiscoveredYear = one ? one.peakYear : null;
+      self._texDirty = true;
+      if (self.uprightQuat) self.targetTilt = self.uprightQuat.clone();
+      self.frameEmpires();
+      self.lastInteract = performance.now() + 100000;
+    });
+  };
+
+  // Aims the camera at everything currently selected. Same fit as the one
+  // scripts/build-empires.mjs bakes in per empire — recomputed here because a
+  // selection of five has a centre and a span that no single entry knows.
+  GlobeEngine.prototype.frameEmpires = function () {
+    if (!empireData) return;
+    var coords = [];
+    for (var i = 0; i < this.empireSel.length; i++) {
+      var emp = empireData[this.empireSel[i].id];
+      if (emp) coords = coords.concat(emp.geometry.coordinates);
+    }
+    if (!coords.length) return;
+    var all = { type: "MultiPolygon", coordinates: coords };
+    var c = d3.geoCentroid(all);
+    var r = 0;
+    for (var p = 0; p < coords.length; p++) {
+      for (var g = 0; g < coords[p].length; g++) {
+        var ring = coords[p][g];
+        for (var k = 0; k < ring.length; k++) r = Math.max(r, d3.geoDistance(c, ring[k]));
+      }
+    }
+    r = Math.min(r, 1.45);
+    var z = Math.max(2.6, Math.min(5.2, Math.max(2.7 + 0.9 * r, 1 / Math.cos(Math.min(r * 1.05, 1.4)))));
+    this.targetQ = this.quatFor(c[1], c[0]);
+    this.targetZ = this.isMobile ? z + 0.35 : z;
+  };
+
+  // null clears the overlay. Each era also carries its own camera framing —
+  // 1206's Mongolia-sized territory and 1279's Pacific-to-Danube span can't be
+  // read at the same zoom.
+  GlobeEngine.prototype.setEmpireYear = function (year) {
+    this.empireYear = eraFor(year) ? year : null;
+    if (this.empireYear) { this.empireSel = []; this.undiscoveredYear = null; }   // the two overlays are one control, two tabs
+    this._texDirty = true;
+    var era = eraFor(this.empireYear);
+    if (!era) return;
+    // A country card open over the era view would be showing an archive for a
+    // border that doesn't apply to the year on screen, so the selection goes
+    // with it — cb.onSelect keeps React's copy of that state in step.
+    var had = this.selName;
+    this.selName = null;
+    this.selLL = null;
+    this.hovName = null;
+    this.buildArchiveDots(null);
+    if (had && this.cb.onSelect) this.cb.onSelect(null);
+    this.targetTilt = this.uprightQuat ? this.uprightQuat.clone() : this.targetTilt;
+    this.frameEra(era);
+    // Far enough ahead that the idle auto-spin can't drift the empire off the
+    // near side while it's being looked at.
+    this.lastInteract = performance.now() + 100000;
+    var self = this, want = this.empireYear;
+    loadEmpires().then(function () {
+      if (self.empireYear !== want) return;   // switched years while loading
+      self._texDirty = true;
+      // The real geometry sits differently from the ring it replaces, so the
+      // camera is re-aimed at what is now actually on the globe.
+      self.frameEra(eraFor(want));
+      self.lastInteract = performance.now() + 100000;
+    }).catch(function () { /* the hand-drawn ring is already on screen */ });
+  };
+
+  GlobeEngine.prototype.frameEra = function (era) {
+    var d = (eraData && eraData[this.empireYear]) || era;
+    if (!d || !d.focus) return;
+    this.targetQ = this.quatFor(d.focus[0], d.focus[1]);
+    this.targetZ = this.isMobile ? d.zoom + 0.35 : d.zoom;
   };
 
   GlobeEngine.prototype.initThree = function () {
@@ -470,9 +804,36 @@
     if (this.cb.onHover) this.cb.onHover(name, cx, cy);
   };
 
+  // True when a click landed on a site pin or within a ring of empty space
+  // around one. The pins are 28px buttons with an 11px visual dot, so a press
+  // aimed at one but a few pixels wide still reads as "this pin", not as the
+  // country underneath it.
+  GlobeEngine.prototype.nearArchiveDot = function (cx, cy) {
+    if (!this.renderer || !this.archiveDots.length) return false;
+    var rect = this.renderer.domElement.getBoundingClientRect();
+    var pad = this.isMobile ? 40 : 30;   // fingers need more room than a cursor
+    for (var i = 0; i < this.archiveDots.length; i++) {
+      var d = this.archiveDots[i];
+      if (d.el.style.opacity === "0") continue;   // on the far side of the globe
+      var x = rect.left + parseFloat(d.el.style.left || "0");
+      var y = rect.top + parseFloat(d.el.style.top || "0");
+      if (Math.hypot(cx - x, cy - y) < pad) return true;
+    }
+    return false;
+  };
+
   GlobeEngine.prototype.clickPick = function (cx, cy) {
     var name = this.countryAt(cx, cy);
-    if (name) this.selectByName(name);
+    if (!name) return;
+    if (name === this.selName) {
+      // A second press on the open country closes it — except near its own
+      // pins, where the press was meant for the pin and closing the country
+      // would take the whole archive panel away with it.
+      if (this.nearArchiveDot(cx, cy)) return;
+      this.clearSelection();
+      return;
+    }
+    this.selectByName(name);
   };
 
   GlobeEngine.prototype.quatFor = function (lat, lng) {
@@ -695,4 +1056,5 @@
   window.GLOBE_COUNTRIES = countries;
   window.resolveCountry = resolveCountry;
   window.GLOBE_ACCENT = ACCENT;
+  window.MONGOL_ERAS = MONGOL_ERAS;
 })();

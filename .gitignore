@@ -6,3 +6,6 @@ generated
 .env*.local
 *.tsbuildinfo
 dist
+
+# Source GeoJSON for scripts/build-empires.mjs — re-downloadable, ~12 MB
+.cache/
