@@ -37,7 +37,17 @@ export function jsonError(err: unknown): NextResponse {
   if (err instanceof ApiError) {
     return NextResponse.json({ error: err.message }, { status: err.status });
   }
-  const anyErr = err as { http_code?: number; status?: number; message?: string };
+  const anyErr = err as { http_code?: number; status?: number; message?: string; name?: string };
   const status = typeof anyErr?.http_code === 'number' ? anyErr.http_code : typeof anyErr?.status === 'number' ? anyErr.status : 500;
-  return NextResponse.json({ error: anyErr?.message || 'Дотоод алдаа гарлаа' }, { status });
+  // Prisma's own error messages (validation errors especially) embed a full
+  // source codeframe of the query call site — meant for a developer's
+  // terminal, not a client response. Passing that straight through used to
+  // surface as a many-hundred-line dump in whatever `alert(err.message)` the
+  // caller used to show it. Anything not already recognized as a clean,
+  // client-safe message (ApiError above, or a Cloudinary-style error that
+  // sets `http_code`) gets the generic fallback instead — full detail still
+  // reaches the server log via console.error just above.
+  const isKnownSafe = typeof anyErr?.http_code === 'number';
+  const message = isKnownSafe && anyErr?.message ? anyErr.message : 'Дотоод алдаа гарлаа';
+  return NextResponse.json({ error: message }, { status });
 }
