@@ -688,7 +688,7 @@ export const TRAVEL_APPS: TravelApp[] = [
   { slug: 'drive-mongolia', icon: Route, name: 'Drive Mongolia', mn: 'Өөрөө жолоодох & хөтөчтэй аялал', en: 'Self-drive & guided tours', url: 'https://www.drivemongolia.com/?utm_source=chatgpt.com' },
 ];
 
-export interface CatItem { name: string; meta: string; sub: string; aimag?: string; hours?: string; phone?: string; desc?: string; access?: boolean; img?: string; images?: string[]; id?: number; lat?: number; lng?: number; mapUrl?: string; instagramUrl?: string; facebookUrl?: string; contactEmail?: string; }
+export interface CatItem { name: string; meta: string; sub: string; aimag?: string; hours?: string; phone?: string; desc?: string; access?: boolean; img?: string; images?: string[]; id?: number; lat?: number; lng?: number; mapUrl?: string; instagramUrl?: string; instagramName?: string; facebookUrl?: string; facebookName?: string; contactEmail?: string; }
 export interface Cat {
   slug: string; num: string; name: string; nameEn: string; desc: string; descEn: string;
   glow: string; hero: string; pool: string[]; subs: string[];

@@ -73,8 +73,8 @@ export default function PlaceDetail() {
     { label: L.pdHours, value: hours },
     { label: L.pdPhone, value: phone },
     { label: L.pdAccessRow, value: access ? L.pdYes : L.pdNo },
-    ...(it.instagramUrl ? [{ label: L.pdInstagram, value: it.instagramUrl, href: withHttps(it.instagramUrl) }] : []),
-    ...(it.facebookUrl ? [{ label: L.pdFacebook, value: it.facebookUrl, href: withHttps(it.facebookUrl) }] : []),
+    ...(it.instagramUrl ? [{ label: L.pdInstagram, value: it.instagramName || it.instagramUrl, href: withHttps(it.instagramUrl) }] : []),
+    ...(it.facebookUrl ? [{ label: L.pdFacebook, value: it.facebookName || it.facebookUrl, href: withHttps(it.facebookUrl) }] : []),
     ...(it.contactEmail ? [{ label: L.pdEmail, value: it.contactEmail, href: `mailto:${it.contactEmail}` }] : []),
   ];
 

@@ -556,7 +556,9 @@ export default class BigBangLayout extends React.Component<Props, any> {
             hours, phone: p.phone || '', desc: p.description || '',
             access: !!p.accessible, img: (p.images && p.images[0]) || '', images: p.images || [],
             lat: p.lat ?? undefined, lng: p.lng ?? undefined, mapUrl: p.googleMapUrl || undefined,
-            instagramUrl: p.instagramUrl || undefined, facebookUrl: p.facebookUrl || undefined, contactEmail: p.contactEmail || undefined,
+            instagramUrl: p.instagramUrl || undefined, instagramName: p.instagramName || undefined,
+            facebookUrl: p.facebookUrl || undefined, facebookName: p.facebookName || undefined,
+            contactEmail: p.contactEmail || undefined,
             id: p.id,
           } as CatItem;
         });

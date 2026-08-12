@@ -336,7 +336,7 @@ export default function AdminPanel() {
       desc: row.description || '',
       catSlug: row.category?.slug,
       sub: row.subCategory || undefined,
-      phone: row.phone || '', instagram: row.instagramUrl || '', facebook: row.facebookUrl || '', contactEmail: row.contactEmail || '',
+      phone: row.phone || '', instagram: row.instagramUrl || '', instagramName: row.instagramName || '', facebook: row.facebookUrl || '', facebookName: row.facebookName || '', contactEmail: row.contactEmail || '',
       openTime: row.openTime || '', closeTime: row.closeTime || '',
       access: !!row.accessible,
     } : kind === 'scenic' ? {
@@ -784,8 +784,8 @@ export default function AdminPanel() {
                         <div className="text-[11px] text-[rgba(242,237,227,.45)] mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
                           {p.phone && <span>☎ {p.phone}</span>}
                           {(p.openTime || p.closeTime) && <span>🕒 {p.openTime || '—'}–{p.closeTime || '—'}</span>}
-                          {p.instagramUrl && <span>IG: {p.instagramUrl}</span>}
-                          {p.facebookUrl && <span>FB: {p.facebookUrl}</span>}
+                          {p.instagramUrl && <span>IG: {p.instagramName || p.instagramUrl}</span>}
+                          {p.facebookUrl && <span>FB: {p.facebookName || p.facebookUrl}</span>}
                           {p.contactEmail && <span>✉ {p.contactEmail}</span>}
                           {p.lat != null && p.lng != null && <span>📍 {p.lat.toFixed(3)}, {p.lng.toFixed(3)}</span>}
                           {p.googleMapUrl && <span>🗺 {p.googleMapUrl}</span>}

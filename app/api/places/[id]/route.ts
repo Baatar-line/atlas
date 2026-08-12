@@ -25,7 +25,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const { id } = await params;
     const {
       name, description, images, categoryId, aimagId, lat, lng, openTime, closeTime, googleMapUrl,
-      subCategory, phone, instagramUrl, facebookUrl, contactEmail, accessible,
+      subCategory, phone, instagramUrl, instagramName, facebookUrl, facebookName, contactEmail, accessible,
     } = await request.json();
     if (images !== undefined && (!Array.isArray(images) || images.length < 1 || images.length > 4)) {
       return NextResponse.json({ error: 'Дор хаяж 1, хамгийн ихдээ 4 зураг оруулна уу' }, { status: 400 });
@@ -44,7 +44,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         lat: lat != null ? Number(lat) : undefined,
         lng: lng != null ? Number(lng) : undefined,
         openTime, closeTime, googleMapUrl,
-        subCategory, phone, instagramUrl, facebookUrl, contactEmail,
+        subCategory, phone, instagramUrl, instagramName, facebookUrl, facebookName, contactEmail,
         accessible: accessible != null ? !!accessible : undefined,
       },
       include: { category: true, aimag: true },
