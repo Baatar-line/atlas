@@ -10,7 +10,9 @@ dist
 # Source GeoJSON for scripts/build-empires.mjs — re-downloadable, ~12 MB
 .cache/
 
-# A scratch browser profile left behind by the doc-generation run. It is not a
-# deliverable — it holds that browser's Cookies, Login Data, History and Trust
-# Tokens, none of which belong in a repo, least of all a public one.
-deliverables/**/edge_profile/
+# Generated documentation output — written locally, downloaded when needed, and
+# 17 MB of PDFs nobody diffs. The run also leaves a scratch browser profile in
+# here holding that browser's Cookies, Login Data, History and Trust Tokens, so
+# the whole directory stays out rather than the profile alone: one `git add .`
+# is all it would take to put that on a public remote.
+deliverables/
