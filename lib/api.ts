@@ -139,7 +139,10 @@ const CLOUDINARY_FREE_LIMIT = 10 * 1024 * 1024;
 // Cloudinary's free-plan video/raw cap. The upload now goes straight to
 // Cloudinary (see uploadImage below), so this is just a client-side
 // pre-check for a clean error message instead of whatever Cloudinary itself
-// returns for an oversized file.
+// returns for an oversized file. Skippable per call site (see `skipSizeLimit`
+// below) — the Home page's admin-managed background is the one place that's
+// meant to allow a longer/bigger video than everything else uploaded by
+// regular users (place/event/scenic photos, other backgrounds).
 const SERVER_UPLOAD_LIMIT = 100 * 1024 * 1024;
 
 async function prepareImageForUpload(file: File): Promise<File> {
@@ -159,9 +162,9 @@ async function prepareImageForUpload(file: File): Promise<File> {
 // "Upload failed: 413" for anything bigger than that — a multi-MB photo or
 // any real video. Only the tiny signature request now touches our function;
 // the actual bytes bypass Vercel's limit entirely.
-export async function uploadImage(file: File, folder: string, token?: string): Promise<string> {
+export async function uploadImage(file: File, folder: string, token?: string, opts?: { skipSizeLimit?: boolean }): Promise<string> {
   const toSend = file.type.startsWith('image/') ? await prepareImageForUpload(file) : file;
-  if (toSend.size > SERVER_UPLOAD_LIMIT) {
+  if (!opts?.skipSizeLimit && toSend.size > SERVER_UPLOAD_LIMIT) {
     throw new Error(`Файл хэтэрхий том байна (дээд тал ${SERVER_UPLOAD_LIMIT / (1024 * 1024)}MB)`);
   }
   const sigRes = await authedFetch('/upload-signature', {

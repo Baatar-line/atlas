@@ -743,7 +743,7 @@ export const CATS: Cat[] = [
     items: [],
   },
   {
-    slug: 'entertainment', num: '02', name: 'Зугаа цэнгэл', nameEn: 'Entertainment',
+    slug: 'entertainment', num: '02', name: 'Энтертайнмент', nameEn: 'Entertainment',
     desc: 'Хөгжим, кино, тайз — хамтдаа зугаацах цаг.',
     descEn: 'Music, movies and shows — time to have fun together.',
     glow: 'rgba(150,110,230,.36)', hero: '1470229722913-7c0e2dbbafd3',

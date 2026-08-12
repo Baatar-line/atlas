@@ -433,7 +433,9 @@ export default function AdminPanel() {
     const f = ev.target.files && ev.target.files[0]; if (!f) return;
     setBgUploading(true);
     try {
-      const url = await uploadImage(f, 'bigbang/backgrounds');
+      // Only the Home page's background skips the usual size cap — every
+      // other background/photo upload keeps the normal 100MB limit.
+      const url = await uploadImage(f, 'bigbang/backgrounds', undefined, { skipSizeLimit: bgEditKind === 'home' });
       // A category keeps its photo and video as two independent slots — the
       // video button fills bgDraftVideoSrc instead of replacing bgDraftSrc.
       if (bgEditKind === 'cat' && asVideo) { setBgDraftVideoSrc(url); return; }

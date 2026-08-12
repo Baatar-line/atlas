@@ -352,7 +352,7 @@ export const CATS: Cat[] = [
     ],
   },
   {
-    slug: 'zugaa', num: '05', name: 'Зугаа цэнгэл', nameEn: 'Entertainment',
+    slug: 'zugaa', num: '05', name: 'Энтертайнмент', nameEn: 'Entertainment',
     desc: 'Инээд, өрсөлдөөн, тоглоом — хамтдаа хөгжилтэй үдэш.',
     descEn: 'Laughter, games and friendly competition.',
     glow: 'rgba(230,90,160,.36)', hero: '1511882150382-421056c89033',

@@ -41,7 +41,7 @@ const AIMAGS: [string, string][] = [
 const CATEGORIES: { slug: string; name: string; nameEn: string; subs: string[] }[] = [
   { slug: 'food', name: 'Хоол', nameEn: 'Food',
     subs: ['Ресторан', 'Кафе', 'Түргэн хоол', 'Дээд зэрэглэлийн ресторан', 'Бэйкери', 'Лоунж'] },
-  { slug: 'entertainment', name: 'Зугаа цэнгэл', nameEn: 'Entertainment',
+  { slug: 'entertainment', name: 'Энтертайнмент', nameEn: 'Entertainment',
     subs: ['Кино театр', 'Амьд хөгжим', 'Студи'] },
   { slug: 'relaxation', name: 'Амралт', nameEn: 'Relaxation',
     subs: ['Массаж', 'Сауна', 'Гоо сайхан', 'Амралтын газар'] },

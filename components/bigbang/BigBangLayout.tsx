@@ -1596,19 +1596,6 @@ export default class BigBangLayout extends React.Component<Props, any> {
       return { bg: catBgOf(c, override), opacity: active === i ? 1 : 0 };
     });
 
-    const activeCat = active >= 0 ? cats[active] : null;
-    const topItems = activeCat
-      ? activeCat.items.map((it, idx) => ({ it, idx, rating: ratingOf(it.name) })).sort((a, b) => +b.rating - +a.rating).slice(0, 3)
-      : [];
-    // Top-3-by-rating within the hovered category, reshaped for
-    // FloatingRocks' polaroid cards — replaces the old bottom-right mini
-    // cluster, which showed this same list separately (see Home's
-    // floatingCards).
-    const catFloatingCards = activeCat ? topItems.map((o) => ({
-      name: o.it.name, sub: o.it.sub, rating: o.rating,
-      thumb: 'linear-gradient(rgba(0,0,0,.1), rgba(0,0,0,.2)), url("' + imgUrl(o.it.img || '', 500) + '")',
-      onClick: () => this.openPlace(activeCat, o.idx),
-    })) : null;
 
     const placeCountFor = (a: string) => cats.reduce((n, c) => n + c.items.filter((it) => (it.aimag || 'Улаанбаатар') === a).length, 0);
     const totalPlaces = cats.reduce((n, c) => n + c.items.length, 0);
@@ -2299,7 +2286,7 @@ export default class BigBangLayout extends React.Component<Props, any> {
         thumb: 'linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.15)), url("' + imgUrl(b.image || '', 500) + '")',
         logoUrl: b.logo ? imgUrl(b.logo, 80) : '',
       })),
-      suggests, cats, navCats, bgLayers, catFloatingCards, topItems: topItems2,
+      suggests, cats, navCats, bgLayers, topItems: topItems2,
       travelApps: TRAVEL_APPS.map((a) => {
         const raw = (this.state.travelAppsBgOverride || {})[a.slug] || '';
         return {

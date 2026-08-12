@@ -3,56 +3,29 @@
 // Big Bang — Home (/): category nav list + aimag hero picker + preview cards.
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { BigBangContext } from '@/components/bigbang/BigBangLayout';
-import FloatingRocks from '@/components/bigbang/FloatingRocks';
+import { BgMedia } from '@/components/bigbang/ui';
 
 export default function Home() {
   const V: any = useContext(BigBangContext);
-  // Hovering a category swaps these to that category's own top-3-rated
-  // places (see catFloatingCards in BigBangLayout) — same list the old
-  // bottom-right mini cluster showed, now merged into the one floating
-  // display instead of the two disagreeing with each other. At rest (no
-  // category hovered) falls back to the global top-3 mix.
-  const placeCards = (V.topItems || []).filter((item: any) => item && item.kind === V.L.favPlaces);
-  const floatingCards = V.catFloatingCards?.length
-    ? V.catFloatingCards
-    : (placeCards.length ? placeCards : (V.topItems || []).filter(Boolean)).slice(0, 3);
   const [backgroundReady, setBackgroundReady] = useState(false);
-  const [rocksReady, setRocksReady] = useState(false);
-  const [cardsReady, setCardsReady] = useState(false);
   const markBackgroundReady = useCallback(() => setBackgroundReady(true), []);
-  const markRocksReady = useCallback(() => setRocksReady(true), []);
   useEffect(() => {
-    // The admin-managed home photo/video is intentionally paused while the
-    // procedural moss-cliff scene is being used. Keep an immediate placeholder
-    // ready signal so the global loader does not wait for disabled media.
-    markBackgroundReady();
-  }, [markBackgroundReady]);
-  useEffect(() => {
-    if (!floatingCards.length) { setCardsReady(true); return; }
-    let alive = true;
-    const urls = floatingCards.map((card: any) => /url\((['"]?)(.*?)\1\)/.exec(card.thumb || '')?.[2]).filter(Boolean);
-    Promise.all(urls.map((url: string) => new Promise<void>((resolve) => {
-      const image = new Image();
-      image.onload = image.onerror = () => resolve();
-      image.src = url;
-    }))).then(() => { if (alive) setCardsReady(true); });
-    return () => { alive = false; };
-  }, [floatingCards.map((card: any) => card?.thumb || '').join('|')]);
-  useEffect(() => {
-    if (backgroundReady && rocksReady && cardsReady) window.dispatchEvent(new Event('atlas:home-ready'));
-  }, [backgroundReady, rocksReady, cardsReady]);
+    if (backgroundReady) window.dispatchEvent(new Event('atlas:home-ready'));
+  }, [backgroundReady]);
   return (
     <section
       data-screen-label="Нүүр — ангилал хайлт"
       className={`relative bg-ink ${V.isTablet ? 'min-h-screen' : 'h-screen overflow-hidden'}`}
     >
-      {/* Temporary home-media placeholder. The uploaded home background stays
-          saved in settings; it is simply not fetched or rendered here. */}
-      <div className="absolute inset-0 bg-[#07100b]" aria-hidden="true">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_42%,rgba(91,123,32,.16),transparent_42%),linear-gradient(135deg,#09130d_0%,#030705_58%,#071009_100%)]" />
-        <div className="absolute inset-0 opacity-[.13] bb-skeleton" />
-      </div>
-      <FloatingRocks places={floatingCards} mapOpen={V.locOpen} onReady={markRocksReady} />
+      {/* Real admin-managed home background (Admin Panel → Фон зураг → Нүүр
+          хуудас) — was sitting unused in settings while the procedural
+          moss-cliff scene stood in for it; that's gone now, so this renders
+          for real again. */}
+      <BgMedia
+        bg={V.homeHeroBg} isVideo={V.homeBgIsVideo} videoSrc={V.homeBgRawUrl}
+        className="absolute inset-0" imgClassName="bg-cover bg-center" videoClassName="bg-cover"
+        onReady={markBackgroundReady}
+      />
       {/* Aimag hero — every aimag keeps its own stable layer (never a shared
           element whose background-image url gets swapped), and switching
           straight from one aimag's photo to another's is a real two-photo
