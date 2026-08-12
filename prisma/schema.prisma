@@ -1,21 +1,3 @@
-// Big Bang — database schema, modeled after the hand-drawn ER diagram.
-//
-// A few things were corrected from the diagram (typos/copy-paste slips in the
-// original, not intentional design):
-//   - Place.aimagId was typed "Enum(user-host-admin)" in the diagram — that enum
-//     belongs to User.role. Here it's a proper relation to Aimag, matching how
-//     ScenicPin.aimagId and Event.aimagId are already modeled.
-//   - Place.lng was typed "Date" in the diagram (clearly a copy/paste slip from
-//     createdAt/updatedAt above it) — it's Float here, and `lat` was added since
-//     every other pinned model (ScenicPin, Event) has both lat and lng.
-//   - Place had its own "favorite Place[]" field, which doesn't make sense on
-//     Place itself (a place favoriting other places). Favoriting is modeled via
-//     the Favorite join table + User.favorites, matching the intent of
-//     User.favorite in the diagram.
-//   - Favorite.placeId is a plain String (not a hard FK) because a favorite can
-//     point at either a Place or a ScenicPin — same "s:<id>" vs "<id>" prefix
-//     convention already used on the frontend (see BigBang.tsx toggleFav).
-
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -25,9 +7,6 @@ datasource db {
   provider = "postgresql"
 }
 
-// No 'host' tier — every signed-in account is a plain 'user' and can create
-// scenic pins/events freely and submit places (which need admin approval);
-// 'admin' is only ever assigned via the seed script, never self-service.
 enum Role {
   user
   admin
@@ -40,12 +19,8 @@ enum PlaceStatus {
 }
 
 model User {
-  id          Int      @id @default(autoincrement())
-  // Regular accounts sign up/in via OTP (see OtpCode below) with either a
-  // phone or an email as their one identifying "contact" — so only one of
-  // the two is guaranteed to be set, not both. `password` stays for the
-  // seeded admin account only (see prisma/seed.ts), which logs in the old
-  // email+password way (POST /api/auth/login) rather than via OTP.
+  id Int @id @default(autoincrement())
+
   email       String?  @unique
   password    String?
   username    String   @unique
@@ -54,25 +29,20 @@ model User {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  profile      Profile?
-  places       Place[]       @relation("PlaceAddedBy")
-  scenicPins   ScenicPin[]   @relation("ScenicPinAddedBy")
-  events       Event[]       @relation("EventAddedBy")
-  suggestCards SuggestCard[] @relation("SuggestCardAddedBy")
-  ads          Ad[]          @relation("AdAddedBy")
-  brands       Brand[]       @relation("BrandAddedBy")
-  favorites    Favorite[]
-  ratings      Rating[]
+  profile          Profile?
+  places           Place[]         @relation("PlaceAddedBy")
+  scenicPins       ScenicPin[]     @relation("ScenicPinAddedBy")
+  events           Event[]         @relation("EventAddedBy")
+  suggestCards     SuggestCard[]   @relation("SuggestCardAddedBy")
+  ads              Ad[]            @relation("AdAddedBy")
+  brands           Brand[]         @relation("BrandAddedBy")
+  favorites        Favorite[]
+  ratings          Rating[]
   eventAttendances EventAttendee[]
 
   @@map("users")
 }
 
-// One-time login codes for the OTP flow (see /api/auth/request-otp,
-// /api/auth/verify-otp). `contact` is a raw phone number or email — DB-backed
-// (not in-memory) since Vercel serverless functions don't share process
-// memory across invocations. `codeHash` so a DB read alone can't leak a
-// still-valid code; `attempts` caps guessing per issued code.
 model OtpCode {
   id        Int      @id @default(autoincrement())
   contact   String
@@ -102,8 +72,6 @@ model Profile {
   @@map("profiles")
 }
 
-// Generic favorite join table — placeId holds either a Place id or a
-// "s:<ScenicPin id>" reference, mirroring the frontend's existing convention.
 model Favorite {
   id        Int      @id @default(autoincrement())
   userId    Int
@@ -115,11 +83,6 @@ model Favorite {
   @@map("favorites")
 }
 
-// Generic 1-5 rating a signed-in user leaves on a place/scenic pin/event —
-// targetKey follows the same "<kind>:<id>" convention as Favorite.placeId
-// (e.g. "place:5", "scenic:12", "event:3") so one table covers all three
-// kinds instead of three near-identical ones. Unique per (user, target) so
-// re-rating updates the existing row instead of stacking duplicates.
 model Rating {
   id        Int      @id @default(autoincrement())
   userId    Int
@@ -134,15 +97,12 @@ model Rating {
 }
 
 model Category {
-  id            Int      @id @default(autoincrement())
-  slug          String   @unique
-  name          String
-  nameEn        String
-  image         String?
-  // Background video shown once a visitor is inside this category's page
-  // (/category/:slug) — `image` above is shown instead on the Home screen's
-  // hover/selection preview, which always stays a still photo even when a
-  // video is set here.
+  id     Int     @id @default(autoincrement())
+  slug   String  @unique
+  name   String
+  nameEn String
+  image  String?
+
   videoImage    String?
   subCategories String[]
   createdAt     DateTime @default(now())
@@ -172,27 +132,22 @@ model Aimag {
 }
 
 model Place {
-  id           Int         @id @default(autoincrement())
-  name         String
-  description  String?
-  // Up to 4 photo URLs (enforced client-side in CreateForm + server-side in
-  // the POST/PATCH routes) — images[0] doubles as the cover thumbnail
-  // wherever only one photo is shown (cards, admin list rows).
-  images       String[]    @default([])
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String?
+
+  images       String[] @default([])
   categoryId   Int
-  category     Category    @relation(fields: [categoryId], references: [id])
+  category     Category @relation(fields: [categoryId], references: [id])
   aimagId      Int
-  aimag        Aimag       @relation(fields: [aimagId], references: [id])
+  aimag        Aimag    @relation(fields: [aimagId], references: [id])
   lat          Float?
   lng          Float?
   openTime     String?
   closeTime    String?
   googleMapUrl String?
-  // Sub-category label (from the owning Category's subCategories list).
   subCategory  String?
-  // Contact info — required at submission time (enforced in the POST /places
-  // route, not just here) so admin has a real way to reach whoever's asking
-  // to be listed before approving them.
+
   phone        String
   instagramUrl String
   facebookUrl  String
@@ -226,39 +181,17 @@ model ScenicPin {
   @@map("scenic_pins")
 }
 
-// Singleton row (id always 1) for site-wide settings that aren't tied to any
-// other model — the "Бидний тухай" hero background and the home screen's
-// default background (shown before any category/aimag is hovered/selected).
 model SiteSettings {
-  id                   Int      @id @default(1)
-  aboutBackgroundImage String?
-  homeBackgroundImage  String?
-  // Real flag photo/graphic for Mongolia's country shape on the 3D globe
-  // (Дэлхийн архив) — falls back to the procedural Soyombo drawing in
-  // globe-engine.js when this isn't set.
-  mongoliaFlagImage    String?
-  // Per-"Санал болгох" card background photo, keyed by the card's static slug
-  // (SUGGESTS in data.ts — games/movies/boardgame/...). A JSON map here instead
-  // of one column per slug since that list isn't a db table and can grow in
-  // code without a migration.
-  suggestBackgroundImages Json?
-  // Full-bleed photo behind the Marauder's-map loading screen (MarauderLoader) —
-  // falls back to the plain dark gradient in the component's own CSS when unset.
-  loaderBackgroundImage String?
-  // Full-bleed photo/video behind the login & host-signup screen (/login) —
-  // falls back to the shared placeholder photo in the page when unset.
-  loginBackgroundImage  String?
-  // Per-app background photo/video behind each of the "Аяллын апп" (travel
-  // apps) tiles on the Suggest page, keyed by the app's static slug (see
-  // TRAVEL_APPS in data.ts — organic-maps/osmand/windy/...). Same JSON-map
-  // pattern as suggestBackgroundImages, for the same reason.
+  id                         Int      @id @default(1)
+  aboutBackgroundImage       String?
+  homeBackgroundImage        String?
+  mongoliaFlagImage          String?
+  suggestBackgroundImages    Json?
+  loaderBackgroundImage      String?
+  loginBackgroundImage       String?
   travelAppsBackgroundImages Json?
-  // Photo for each team member's badge on the "Бидний тухай" page, keyed by
-  // the member's static slug (see TEAM in data.ts — azaa/baska/chinzo/...).
-  // Same JSON-map pattern as the two above; a member without one falls back
-  // to the coloured circle with their first letter.
-  teamImages           Json?
-  updatedAt            DateTime @updatedAt
+  teamImages                 Json?
+  updatedAt                  DateTime @updatedAt
 
   @@map("site_settings")
 }
@@ -276,31 +209,21 @@ model Event {
   lat       Float?
   lng       Float?
   featured  Boolean   @default(false)
-  // Contact info — required at submission time for *new* events (enforced
-  // in POST /events, not here — nullable at the db level since existing
-  // rows predate this and can't be backfilled) so admin/attendees have a
-  // real way to reach the host. A phone is always required; of the two
-  // socials at least one must be filled (either is enough to reach a host),
-  // which is why neither is individually mandatory.
-  instagram String?
-  facebook  String?
-  phone     String?
+
+  instagram   String?
+  facebook    String?
+  phone       String?
   // Optional second contact number — organizers often list a backup.
   phone2      String?
   addedBy     Int
-  addedByUser User    @relation("EventAddedBy", fields: [addedBy], references: [id])
-  attendees EventAttendee[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  addedByUser User            @relation("EventAddedBy", fields: [addedBy], references: [id])
+  attendees   EventAttendee[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
 
   @@map("events")
 }
 
-// One row per "Очно" press — what turns that button from a local toggle into
-// a real, countable headcount shown on the event's detail page and on its
-// organizer's profile card. A real FK to Event (unlike Favorite.placeId's
-// free-form string key) since this can only ever point at an event, so
-// deleting an event takes its attendee rows with it.
 model EventAttendee {
   id        Int      @id @default(autoincrement())
   eventId   Int
@@ -313,34 +236,15 @@ model EventAttendee {
   @@map("event_attendees")
 }
 
-// Sub-cards shown when a "Санал болгох" card (SUGGESTS in bigbang/data.ts —
-// games/movies/boardgame, a small fixed set defined in code, not this table)
-// is opened. Admin-panel-only content — there's no public submission flow
-// for these like there is for places/scenic pins/events, so creation is
-// gated to admin in the API route rather than any signed-in account.
 model SuggestCard {
-  id             Int      @id @default(autoincrement())
-  // Matches one of SUGGESTS' static slugs (games/movies/boardgame) — not a
-  // foreign key since that list lives in code, not a db table.
+  id Int @id @default(autoincrement())
+
   collectionSlug String
   name           String
   description    String?
   image          String?
-  // Where the card sends you when clicked — a Steam store page for a game, or
-  // whatever the equivalent is for the other collections. Optional: a card
-  // without one stays a plain, non-clickable tile the way all of them were
-  // before this existed.
   link           String?
-  // Pins the card ahead of the rest on its collection page, which otherwise
-  // orders purely by newest-first. Four cards fill the first row on desktop,
-  // so this is how an admin decides which four a visitor sees without
-  // scrolling. Not capped at four — a fifth just starts the second row.
   featured       Boolean  @default(false)
-  // Optional filter bucket within a collection ("Хосоороо үзэх",
-  // "Найзуудтайгаа үзэх", ...). Free text rather than an enum or its own
-  // table: the collection page builds its filter chips from whichever distinct
-  // values its own cards carry, so a collection that never sets this simply
-  // shows no chips and a new bucket needs no migration.
   group          String?
   addedBy        Int
   addedByUser    User     @relation("SuggestCardAddedBy", fields: [addedBy], references: [id])
@@ -350,8 +254,6 @@ model SuggestCard {
   @@map("suggest_cards")
 }
 
-// The globe archive stores metadata and remote image URLs only. Images remain
-// on Wikimedia (or another source CDN), keeping the Neon database small.
 model CountrySite {
   id        Int      @id @default(autoincrement())
   country   String
@@ -371,9 +273,6 @@ model CountrySite {
   @@map("country_sites")
 }
 
-// Admin panel's "Зар сурталчилгаа" tab — admin-only content, no public listing
-// endpoint; shown to visitors only via the first-visit AdModal popup (see
-// app/api/ads/active/route.ts), not embedded in any page's normal content.
 model Ad {
   id          Int       @id @default(autoincrement())
   title       String
@@ -391,21 +290,12 @@ model Ad {
   @@map("ads")
 }
 
-// Admin panel's "Брэндийн сурталчилгаа" tab — sponsored/featured brand or
-// product spotlights, shown as a horizontal rail on the /suggest page (see
-// app/(bigbang)/suggest/page.tsx). A separate content type from Ad (which
-// only powers the first-visit popup) — this one is a normal, always-visible
-// page section, so unlike Ad it needs a public GET (see app/api/brands).
 model Brand {
   id          Int      @id @default(autoincrement())
   name        String
-  // Short tag shown under the name, e.g. "Технологи", "Хувцас загвар" — free
-  // text, not a Category FK, since these are sponsor labels, not app categories.
   category    String
   image       String?
   logo        String?
-  // Optional click-through — an internal path or an external site both work
-  // (rendered as a plain <a href>, see the suggest page).
   link        String?
   active      Boolean  @default(true)
   addedBy     Int
