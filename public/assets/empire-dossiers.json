@@ -1,0 +1,789 @@
+{
+  "british": {
+    "capital": {
+      "mn": "Лондон",
+      "en": "London",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/London_Skyline_%28125508655%29.jpeg/960px-London_Skyline_%28125508655%29.jpeg",
+      "source": "https://en.wikipedia.org/wiki/London",
+      "blurb": ""
+    },
+    "ruler": {
+      "mn": "Виктория хатан хаан",
+      "en": "Queen Victoria",
+      "reign": "1837–1901",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Queen_Victoria_by_Bassano.jpg/960px-Queen_Victoria_by_Bassano.jpg",
+      "source": "https://en.wikipedia.org/wiki/Queen_Victoria",
+      "blurb": ""
+    },
+    "facts": [
+      {
+        "mn": "Оргил үедээ дэлхийн хуурай газрын дөрөвний нэгийг, хүн амын дөрөвний нэгийг захирч байсан — түүхэн дэх хамгийн том эзэнт гүрэн.",
+        "en": "At its peak it held about a quarter of the world's land and a quarter of its people — the largest empire in history."
+      },
+      {
+        "mn": "«Нар жаргадаггүй эзэнт гүрэн» гэдэг нэр нь яруу үг биш: газар нутаг нь бүх цагийн бүсэд тархсан тул үргэлж хаа нэгтээ нь өдөр байв.",
+        "en": "The phrase \"the empire on which the sun never sets\" was literal: its territories spanned every time zone, so it was always daytime somewhere in it."
+      },
+      {
+        "mn": "Дэлхийн цагийн эхлэл Гринвичээр тогтсон нь тэнгисийн ноёрхлын үр дүн — далайн замын зураглалыг Британи хийж байсан учир 1884 онд Гринвичийг 0 градус болгожээ.",
+        "en": "World time starts at Greenwich because of that naval reach — British charts dominated navigation, so in 1884 Greenwich was fixed as zero longitude."
+      }
+    ]
+  },
+  "mongol": {
+    "capital": {
+      "mn": "Хархорум",
+      "en": "Karakorum",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Erdene_Zuu_Monastery_05.jpg/960px-Erdene_Zuu_Monastery_05.jpg",
+      "source": "https://en.wikipedia.org/wiki/Karakorum",
+      "blurb": "Karakorum (Halh Mongolian: Хархорум, Kharkhorum; Mongolian script: ᠬᠠᠷᠠᠬᠣᠷᠣᠮ, Qaraqorum) was the capital of the Mongol Empire between 1235 and 1260 and of the Northern Yuan dynasty in the late 14th and 15th centuries."
+    },
+    "ruler": {
+      "mn": "Чингис хаан",
+      "en": "Genghis Khan",
+      "reign": "1206–1227",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/YuanEmperorAlbumGenghisPortrait.jpg/960px-YuanEmperorAlbumGenghisPortrait.jpg",
+      "source": "https://en.wikipedia.org/wiki/Genghis_Khan",
+      "blurb": "Genghis Khan (born Temüjin; c. 1162 – 18 or 25 August 1227), also known as Chinggis Khan, was the founder and first khan of the Mongol Empire."
+    },
+    "facts": [
+      {
+        "mn": "Түүхэн дэх хамгийн том залгаа газар нутагтай эзэнт гүрэн — Британиас талбайгаар бага ч, тасалдалгүй нэг бүхэл нутаг байсан нь давтагдаагүй.",
+        "en": "The largest contiguous land empire ever — smaller than Britain's in total area, but a single unbroken landmass, which nothing has matched."
+      },
+      {
+        "mn": "Хубилай хаан цаасан мөнгийг (Чао) улс даяар цорын ганц хууль ёсны төлбөрийн хэрэгсэл болгосон. Мөнгө, торгоор баталгаажсан цаас — Европ үүнийг Марко Пологийн тэмдэглэлээр дамжуулж мэдсэн.",
+        "en": "Kublai Khan made paper money (chao) the sole legal tender across the realm — paper backed by silver and silk, which Europe first heard of through Marco Polo."
+      },
+      {
+        "mn": "Өртөөний сүлжээ: тогтсон зайд байрлах бэлэн морьтой өртөөнүүдээр захидал өдөрт 300 гаруй км туулдаг байв. Энэ хурдыг Европ 19-р зууны төмөр зам хүртэл давж чадаагүй.",
+        "en": "The yam relay: stations kept fresh horses at fixed intervals, moving a message over 300 km a day — a speed Europe did not beat until railways in the 1800s."
+      }
+    ]
+  },
+  "russian": {
+    "capital": {
+      "mn": "Санкт-Петербург",
+      "en": "Saint Petersburg",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Spb_06-2017_img20_StMichael_Castle_%28cropped%29.jpg/960px-Spb_06-2017_img20_StMichael_Castle_%28cropped%29.jpg",
+      "source": "https://en.wikipedia.org/wiki/Saint_Petersburg",
+      "blurb": ""
+    },
+    "ruler": {
+      "mn": "II Екатерина хатан хаан",
+      "en": "Catherine the Great",
+      "reign": "1762–1796",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Catherine_II_after_Roslin%2C_Rokotov_%281780s%2C_Kunsthistorisches_Museum%29.jpg/960px-Catherine_II_after_Roslin%2C_Rokotov_%281780s%2C_Kunsthistorisches_Museum%29.jpg",
+      "source": "https://en.wikipedia.org/wiki/Catherine_the_Great",
+      "blurb": "Catherine II (born Princess Sophia Augusta Frederica of Anhalt-Zerbst; 2 May 1729 – 17 November 1796), commonly known as Catherine the Great, was the Empress of Russia from 1762 to 1796."
+    },
+    "facts": [
+      {
+        "mn": "Сибирийг туулсан тэлэлт нь голдуу үслэг ангийн наймааны араас явсан — булганы үс тэр үед үнэт металлтай зэрэгцэх өртөгтэй байв.",
+        "en": "The push across Siberia followed the fur trade — sable pelts were then priced alongside precious metals."
+      },
+      {
+        "mn": "1867 онд Аляскийг АНУ-д 7.2 сая доллараар зарсан. Га тутам нь 2 центээс арай илүү — өнөөгийн мөнгөөр ч дэлхийн хамгийн хямд газрын наймааны нэг хэвээр.",
+        "en": "In 1867 it sold Alaska to the United States for $7.2 million — about two cents an acre, still one of the cheapest land deals ever made."
+      },
+      {
+        "mn": "Транссибирийн төмөр зам 9,289 км — өнөөг хүртэл дэлхийн хамгийн урт төмөр замын шугам, нэг эзэнт гүрний дотор баригдсан.",
+        "en": "The Trans-Siberian Railway runs 9,289 km — still the longest railway line in the world, built inside a single empire."
+      }
+    ]
+  },
+  "qing": {
+    "capital": {
+      "mn": "Бээжин",
+      "en": "Beijing",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/Skyline_of_Beijing_CBD_with_B-5906_approaching_%2820211016171955%29_%281%29.jpg/960px-Skyline_of_Beijing_CBD_with_B-5906_approaching_%2820211016171955%29_%281%29.jpg",
+      "source": "https://en.wikipedia.org/wiki/Beijing",
+      "blurb": "Beijing, previously romanized as Peking, is the capital city of China."
+    },
+    "ruler": {
+      "mn": "Тэнгэрийн тэтгэсэн хаан (Цяньлун)",
+      "en": "Qianlong Emperor",
+      "reign": "1735–1796",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/%E4%B9%BE%E9%9A%86%E7%9A%87%E5%B8%9D%E6%9C%9D%E6%9C%8D%E5%83%8F%E8%BD%B4.png/960px-%E4%B9%BE%E9%9A%86%E7%9A%87%E5%B8%9D%E6%9C%9D%E6%9C%8D%E5%83%8F%E8%BD%B4.png",
+      "source": "https://en.wikipedia.org/wiki/Qianlong_Emperor",
+      "blurb": ""
+    },
+    "facts": [
+      {
+        "mn": "Манж гаралтай хаант улс Хятадыг захирсан ч монгол, түвэд, уйгур нутгийг тусад нь, өөр өөр журмаар удирдаж байв.",
+        "en": "A Manchu dynasty ruling China, it governed Mongol, Tibetan and Uyghur lands separately, each under its own set of rules."
+      },
+      {
+        "mn": "18-р зуунд дэлхийн эдийн засгийн бараг гуравны нэгийг дангаараа бүрдүүлж байсан гэж түүхэн тооцоолол хэлдэг.",
+        "en": "Historical estimates put it at nearly a third of the world economy on its own in the 1700s."
+      },
+      {
+        "mn": "Цяньлун хааны захиалгаар эмхэтгэсэн «Сыку цюаньшу» цуглуулга 36 мянга гаруй боть — цаасан дээрх хамгийн том эмхэтгэлийн нэг.",
+        "en": "The Siku Quanshu compiled at Qianlong's order ran to over 36,000 volumes — one of the largest collections ever put on paper."
+      }
+    ]
+  },
+  "spanish": {
+    "capital": {
+      "mn": "Мадрид",
+      "en": "Madrid",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Madrid_-_Sky_Bar_360%C2%BA_%28Hotel_Riu_Plaza_Espa%C3%B1a%29%2C_vistas_19.jpg/960px-Madrid_-_Sky_Bar_360%C2%BA_%28Hotel_Riu_Plaza_Espa%C3%B1a%29%2C_vistas_19.jpg",
+      "source": "https://en.wikipedia.org/wiki/Madrid",
+      "blurb": ""
+    },
+    "ruler": {
+      "mn": "II Филипп хаан",
+      "en": "Philip II",
+      "reign": "1556–1598",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/Portrait_of_Philip_II_of_Spain_by_Sofonisba_Anguissola_-_002b.jpg/960px-Portrait_of_Philip_II_of_Spain_by_Sofonisba_Anguissola_-_002b.jpg",
+      "source": "https://en.wikipedia.org/wiki/Philip_II_of_Spain",
+      "blurb": ""
+    },
+    "facts": [
+      {
+        "mn": "Потосигийн мөнгөний уурхай (одоогийн Боливи) эзэнт гүрнийг санхүүжүүлж, зуун жилийн турш дэлхийн мөнгөний ихэнхийг өгч байв.",
+        "en": "The silver mountain at Potosí (in today's Bolivia) bankrolled the empire, supplying much of the world's silver for a century."
+      },
+      {
+        "mn": "Тэр мөнгө Манилаар дамжин Хятад руу урсаж, түүхэн дэх анхны жинхэнэ дэлхийн худалдааны сүлжээг үүсгэсэн.",
+        "en": "That silver flowed through Manila to China, creating what is often called the first genuinely global trade network."
+      },
+      {
+        "mn": "Испани хэл өнөөдөр 20 гаруй улсын албан ёсны хэл — эзэнт гүрний хамгийн урт насалсан ул мөр.",
+        "en": "Spanish is now official in more than twenty countries — the empire's longest-lasting trace."
+      }
+    ]
+  },
+  "french": {
+    "capital": {
+      "mn": "Парис",
+      "en": "Paris",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques%2C_Paris_ao%C3%BBt_2014_%282%29.jpg/960px-La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques%2C_Paris_ao%C3%BBt_2014_%282%29.jpg",
+      "source": "https://en.wikipedia.org/wiki/Paris",
+      "blurb": ""
+    },
+    "ruler": {
+      "mn": "Жюль Ферри",
+      "en": "Jules Ferry",
+      "reign": "1880–1885",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/1/16/Jules_Ferry_-_The_Evolution_of_France_under_the_Third_Republic_%28cropped%29.jpg",
+      "source": "https://en.wikipedia.org/wiki/Jules_Ferry",
+      "blurb": "Jules François Camille Ferry (French: [ʒyl fɛʁi]; 5 April 1832 – 17 March 1893) was a French statesman and republican philosopher."
+    },
+    "facts": [
+      {
+        "mn": "Хоёр дахь колончлолын гүрэн: эхнийхийг нь алдсаны дараа 19-р зуунд Африк, Индохинад дахин байгуулагдсан.",
+        "en": "The second colonial empire: rebuilt in the 1800s across Africa and Indochina after the first one was lost."
+      },
+      {
+        "mn": "Оргил үедээ Францын нутаг дэвсгэрийн 20 дахин том газрыг эзэмшиж байв.",
+        "en": "At its height it held territory around twenty times the size of France itself."
+      },
+      {
+        "mn": "Франц хэл өнөөдөр таван тивийн 29 улсын албан ёсны хэл хэвээр.",
+        "en": "French remains official in 29 countries across five continents."
+      }
+    ]
+  },
+  "umayyad": {
+    "capital": {
+      "mn": "Дамаск",
+      "en": "Damascus",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Damascus%2C_Syria%2C_Panoramic_view_of_Damascus.jpg/960px-Damascus%2C_Syria%2C_Panoramic_view_of_Damascus.jpg",
+      "source": "https://en.wikipedia.org/wiki/Damascus",
+      "blurb": "Damascus is the capital and largest city of Syria."
+    },
+    "ruler": {
+      "mn": "I Аль-Валид халиф",
+      "en": "Al-Walid I",
+      "reign": "705–715",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Gold_dinar_of_al-Walid_707-708_CE.jpg/960px-Gold_dinar_of_al-Walid_707-708_CE.jpg",
+      "source": "https://en.wikipedia.org/wiki/Al-Walid_I",
+      "blurb": "Al-Walid ibn Abd al-Malik ibn Marwan (c. 674 – 23 February 715), commonly known as al-Walid I, was the sixth Umayyad caliph, ruling from October 705 until his death in 715."
+    },
+    "facts": [
+      {
+        "mn": "Зөвхөн зуун жилийн дотор Испаниас Инд мөрөн хүртэл тэлсэн — түүхэн дэх хамгийн хурдан тэлэлтүүдийн нэг.",
+        "en": "It stretched from Spain to the Indus in under a century — one of the fastest expansions in history."
+      },
+      {
+        "mn": "Араб хэлийг захиргааны нэгдсэн хэл болгосон нь Дундад Дорнодын хэл шинжлэлийн зургийг өнөөг хүртэл тодорхойлж байна.",
+        "en": "Making Arabic the single language of administration shaped the linguistic map of the Middle East to this day."
+      },
+      {
+        "mn": "Дамаскийн Их сүм нь тухайн үедээ дэлхийн хамгийн өндөр өртөгтэй барилгуудын нэг байсан гэдэг.",
+        "en": "The Great Mosque of Damascus was said to be among the most expensive buildings in the world at the time."
+      }
+    ]
+  },
+  "abbasid": {
+    "capital": {
+      "mn": "Багдад",
+      "en": "Baghdad",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/5628442718_b10fc2c47f_o.jpg/960px-5628442718_b10fc2c47f_o.jpg",
+      "source": "https://en.wikipedia.org/wiki/Baghdad",
+      "blurb": "Baghdad is the capital and largest city in Iraq."
+    },
+    "ruler": {
+      "mn": "Харун аль-Рашид халиф",
+      "en": "Harun al-Rashid",
+      "reign": "786–809",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Harun_Al-Rashid_on_the_Takht.png/960px-Harun_Al-Rashid_on_the_Takht.png",
+      "source": "https://en.wikipedia.org/wiki/Harun_al-Rashid",
+      "blurb": "Abū Jaʿfar Hārūn ibn Muḥammad ar-Rashīd, or simply Hārūn ibn al-Mahdī (c. 763 or 766 – 24 March 809), famously known as Hārūn al-Rashīd, was the fifth of the Abbasid caliphs, reigning from September 786 until his death in March 809."
+    },
+    "facts": [
+      {
+        "mn": "Багдадын «Мэргэн ухааны өргөө» нь Грек, Перс, Энэтхэгийн зохиолыг араб руу орчуулж, эртний мэдлэгийг үхлээс аварсан.",
+        "en": "Baghdad's House of Wisdom translated Greek, Persian and Indian works into Arabic, saving much ancient knowledge from loss."
+      },
+      {
+        "mn": "Тоонуудыг бид «араб тоо» гэж нэрлэдэг ч Энэтхэгээс гаралтай — Аббасидын эрдэмтэд дамжуулж, дэлхийд түгээсэн.",
+        "en": "The digits we call Arabic numerals came from India — Abbasid scholars carried them onward to the world."
+      },
+      {
+        "mn": "«Алгоритм» гэдэг үг нь Багдадад ажиллаж байсан математикч аль-Хорезмийн нэрнээс гаралтай.",
+        "en": "The word \"algorithm\" comes from al-Khwarizmi, a mathematician working in Baghdad."
+      }
+    ]
+  },
+  "yuan": {
+    "capital": {
+      "mn": "Ханбалиг (Даду)",
+      "en": "Khanbaliq",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/The_Beijing_Gulou.JPG/960px-The_Beijing_Gulou.JPG",
+      "source": "https://en.wikipedia.org/wiki/Dadu_(Beijing)",
+      "blurb": ""
+    },
+    "ruler": {
+      "mn": "Хубилай хаан",
+      "en": "Kublai Khan",
+      "reign": "1260–1294",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/YuanEmperorAlbumKhubilaiPortrait.jpg/960px-YuanEmperorAlbumKhubilaiPortrait.jpg",
+      "source": "https://en.wikipedia.org/wiki/Kublai_Khan",
+      "blurb": ""
+    },
+    "facts": [
+      {
+        "mn": "Хятадыг бүхэлд нь захирсан анхны эзэнт гүрэн монгол угсаатны байв.",
+        "en": "The first dynasty to rule all of China was of Mongol origin."
+      },
+      {
+        "mn": "Өнөөгийн Бээжин хотын суурь нь Хубилайн байгуулсан Даду хот — түүний төлөвлөлт өнөөг хүртэл хотын голд харагддаг.",
+        "en": "Modern Beijing sits on Kublai's city of Dadu — his plan is still legible in the city's core."
+      },
+      {
+        "mn": "Марко Поло энэ ордонд ирж, Европт цаасан мөнгө, нүүрсний тухай ярьж байсан нь итгэмээргүй мэт хүлээж авагдсан.",
+        "en": "Marco Polo came to this court, and his reports of paper money and burning coal were received in Europe as barely credible."
+      }
+    ]
+  },
+  "portuguese": {
+    "capital": {
+      "mn": "Лиссабон",
+      "en": "Lisbon",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Lisboa_-_Portugal_%2852597836992%29.jpg/960px-Lisboa_-_Portugal_%2852597836992%29.jpg",
+      "source": "https://en.wikipedia.org/wiki/Lisbon",
+      "blurb": ""
+    },
+    "ruler": {
+      "mn": "I Мануэл хаан",
+      "en": "Manuel I",
+      "reign": "1495–1521",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/5/57/Statue_of_King_Manuel_I_of_Portugal_by_Nicolau_Chanterene.jpg",
+      "source": "https://en.wikipedia.org/wiki/Manuel_I_of_Portugal",
+      "blurb": ""
+    },
+    "facts": [
+      {
+        "mn": "Европын анхны бөгөөд хамгийн удаан наслсан колончлолын гүрэн — 1415-аас 1999 он хүртэл бараг зургаан зуун жил.",
+        "en": "Europe's first and longest-lived colonial empire — nearly six centuries, from 1415 to 1999."
+      },
+      {
+        "mn": "1494 оны Тордесильясын гэрээгээр Португал, Испани хоёр дэлхийг газрын зураг дээр шулуун зураасаар хуваасан.",
+        "en": "By the 1494 Treaty of Tordesillas, Portugal and Spain divided the world between them along a line drawn on a map."
+      },
+      {
+        "mn": "Васко да Гамагийн Энэтхэг рүү хийсэн далайн аялал амжилттай болсноор амтлагчийн худалдаа Европын гарт орсон.",
+        "en": "Vasco da Gama's sea route to India put the spice trade in European hands."
+      }
+    ]
+  },
+  "turk": {
+    "capital": {
+      "mn": "Өтүкэн — Орхоны хөндий",
+      "en": "Ötüken — Orkhon Valley",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/Orchon-mongolei.JPG/960px-Orchon-mongolei.JPG",
+      "source": "https://en.wikipedia.org/wiki/Orkhon_Valley",
+      "blurb": ""
+    },
+    "ruler": {
+      "mn": "Мухан хаган",
+      "en": "Muqan Qaghan",
+      "reign": "553–572",
+      "img": "",
+      "source": "https://en.wikipedia.org/wiki/Muqan_Qaghan",
+      "blurb": ""
+    },
+    "facts": [
+      {
+        "mn": "Манж нутгаас Хар тэнгис хүртэл Торгоны замыг бүхэлд нь хяналтдаа авсан анхны нүүдэлчин гүрэн.",
+        "en": "The first steppe power to control the whole Silk Road, from Manchuria to the Black Sea."
+      },
+      {
+        "mn": "Орхоны бичээс бол түрэг хэлээр бичигдсэн хамгийн эртний уншигдах дурсгал — Монголын нутагт өнөөг хүртэл зогсож байна.",
+        "en": "The Orkhon inscriptions are the oldest readable texts in a Turkic language, and still stand in Mongolia."
+      },
+      {
+        "mn": "«Түрэг» гэдэг нэр өнөөдрийн Турк, Түркмен, Узбек зэрэг олон улсын нэрийн үндэс болсон.",
+        "en": "The name \"Türk\" is the root of the names of Turkey, Turkmenistan, Uzbekistan and more."
+      }
+    ]
+  },
+  "xiongnu": {
+    "capital": {
+      "mn": "Луут хот (Лунчэн)",
+      "en": "Longcheng",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/%D0%A3%D1%82%D1%80%D0%BE_%D0%BD%D0%B0_%D0%98%D0%B2%D0%BE%D0%BB%D0%B3%D0%B8%D0%BD%D1%81%D0%BA%D0%BE%D0%BC_%D0%B3%D0%BE%D1%80%D0%BE%D0%B4%D0%B8%D1%89%D0%B5.jpg/960px-%D0%A3%D1%82%D1%80%D0%BE_%D0%BD%D0%B0_%D0%98%D0%B2%D0%BE%D0%BB%D0%B3%D0%B8%D0%BD%D1%81%D0%BA%D0%BE%D0%BC_%D0%B3%D0%BE%D1%80%D0%BE%D0%B4%D0%B8%D1%89%D0%B5.jpg",
+      "photo": {
+        "mn": "Зураг: Иволгагийн Хүннү хот суурин",
+        "en": "Pictured: the excavated Xiongnu town at Ivolga"
+      },
+      "source": "https://en.wikipedia.org/wiki/Ivolginsky_District",
+      "blurb": "Ivolginsky District (Russian: Иволги́нский райо́н; Buryat: Эбилгын аймаг, Ebilgyn aimag) is an administrative and municipal district (raion), one of the twenty-one in the Republic of Buryatia, Russia."
+    },
+    "ruler": {
+      "mn": "Модун шаньюй",
+      "en": "Modu Chanyu",
+      "reign": "МЭӨ 209–174",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/Reconstruction_of_a_Xiongnu_chief_warrior%2C_2nd_century_BCE-1st_century_CE.jpg/960px-Reconstruction_of_a_Xiongnu_chief_warrior%2C_2nd_century_BCE-1st_century_CE.jpg",
+      "photo": {
+        "mn": "Зураг: тэр үеийн Хүннү ноёны сэргээн зураг",
+        "en": "Pictured: a reconstruction of a Xiongnu chief of that era"
+      },
+      "source": "https://en.wikipedia.org/wiki/Chanyu",
+      "blurb": "Chanyu (simplified Chinese: 单于; traditional Chinese: 單于; pinyin: Chányú) or Shanyu (Chinese: 善于), short for Chengli Gutu Chanyu (Chinese: 撐犁孤塗單于; pinyin: Chēnglí Gūtu Chányú), was the title used by the supreme rulers of Inner Asian nomads for eight centuries until superseded by the title \"Khagan\" in 402 AD."
+    },
+    "facts": [
+      {
+        "mn": "Монголын нутагт байгуулагдсан анхны нүүдэлчдийн эзэнт гүрэн — Чингисээс 1400 жилийн өмнө.",
+        "en": "The first nomadic empire founded on the Mongolian plateau — fourteen centuries before Genghis."
+      },
+      {
+        "mn": "Хятадын Цагаан хэрмийг холбож, бэхжүүлэх болсон шалтгаан нь голчлон Хүннүгийн морин цэрэг байв.",
+        "en": "The Great Wall was joined up and strengthened largely because of Xiongnu cavalry."
+      },
+      {
+        "mn": "Хань улс тэднийг дарж чадалгүй, гүнж өгч, торго, тариа жил бүр илгээж эвлэрдэг байсан — эзэнт гүрэн албан ёсоор алба гувчуур төлж байсан ховор тохиолдол.",
+        "en": "Unable to defeat them, Han China sent princesses, silk and grain every year — a rare case of an empire paying tribute outward."
+      }
+    ]
+  },
+  "brazilian": {
+    "capital": {
+      "mn": "Рио-де-Жанейро",
+      "en": "Rio de Janeiro",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Cidade_Maravilhosa.jpg/960px-Cidade_Maravilhosa.jpg",
+      "source": "https://en.wikipedia.org/wiki/Rio_de_Janeiro",
+      "blurb": ""
+    },
+    "ruler": {
+      "mn": "II Педру хаан",
+      "en": "Pedro II",
+      "reign": "1831–1889",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Pedro_II_of_Brazil_-_Brady-Handy.jpg/960px-Pedro_II_of_Brazil_-_Brady-Handy.jpg",
+      "source": "https://en.wikipedia.org/wiki/Pedro_II_of_Brazil",
+      "blurb": ""
+    },
+    "facts": [
+      {
+        "mn": "Америк тивд байгуулагдсан цорын ганц удаан наслсан хаант засаглал.",
+        "en": "The only long-lasting monarchy established in the Americas."
+      },
+      {
+        "mn": "Португалийн хаан Наполеоноос зугтаж Бразил руу нүүсэн нь колони нь эзэнт гүрний нийслэл болсон түүхэн ховор тохиолдол.",
+        "en": "When Portugal's court fled Napoleon to Brazil, a colony briefly became the seat of its own empire — a rare inversion."
+      },
+      {
+        "mn": "Бразил бол боолчлолыг Америк тивд хамгийн сүүлд, 1888 онд халсан улс.",
+        "en": "Brazil was the last country in the Americas to abolish slavery, in 1888."
+      }
+    ]
+  },
+  "french1": {
+    "capital": {
+      "mn": "Парис",
+      "en": "Paris",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques%2C_Paris_ao%C3%BBt_2014_%282%29.jpg/960px-La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques%2C_Paris_ao%C3%BBt_2014_%282%29.jpg",
+      "source": "https://en.wikipedia.org/wiki/Paris",
+      "blurb": ""
+    },
+    "ruler": {
+      "mn": "XIV Людовик хаан",
+      "en": "Louis XIV",
+      "reign": "1643–1715",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Louis_XIV_of_France.jpg/960px-Louis_XIV_of_France.jpg",
+      "source": "https://en.wikipedia.org/wiki/Louis_XIV",
+      "blurb": ""
+    },
+    "facts": [
+      {
+        "mn": "Анхны колончлолын гүрэн Хойд Америкийн голуудыг дагаж тэлсэн — Квебекээс Луизиана хүртэл.",
+        "en": "The first colonial empire spread along North America's rivers — from Quebec down to Louisiana."
+      },
+      {
+        "mn": "1803 онд Луизианаг АНУ-д зарснаар АНУ-ын газар нутаг нэг өдрийн дотор бараг хоёр дахин нэмэгдсэн.",
+        "en": "Selling Louisiana to the United States in 1803 nearly doubled that country's territory overnight."
+      },
+      {
+        "mn": "Канадын Квебек муж франц хэлээ өнөөг хүртэл хадгалсан нь энэ гүрний үлдэц.",
+        "en": "Quebec's French language today is what remains of it."
+      }
+    ]
+  },
+  "japanese": {
+    "capital": {
+      "mn": "Токио",
+      "en": "Tokyo",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Skyscrapers_of_Shinjuku_2009_January.jpg/960px-Skyscrapers_of_Shinjuku_2009_January.jpg",
+      "source": "https://en.wikipedia.org/wiki/Tokyo",
+      "blurb": ""
+    },
+    "ruler": {
+      "mn": "Хирохито (Шоува) эзэн хаан",
+      "en": "Emperor Shōwa (Hirohito)",
+      "reign": "1926–1989",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/b/bc/Hirohito_in_dress_uniform_%28cropped%29.jpg",
+      "source": "https://en.wikipedia.org/wiki/Hirohito",
+      "blurb": "Emperor Shōwa (29 April 1901 – 7 January 1989), personal name Hirohito, was Emperor of Japan from 25 December 1926 until his death on 7 January 1989."
+    },
+    "facts": [
+      {
+        "mn": "Оргил үе нь ердөө хэдхэн сар үргэлжилсэн — 1942 оны эхээр Номхон далайн баруун хэсгийг бараг бүхэлд нь эзэлж байв.",
+        "en": "Its peak lasted only months — in early 1942 it held nearly the whole western Pacific."
+      },
+      {
+        "mn": "Азийн улсуудаас Европын колончлолд бүрэн ороогүй цөөхний нэг байсан бөгөөд өөрөө колончлогч болсон.",
+        "en": "One of the few Asian states never fully colonised by Europe, it became a coloniser itself."
+      },
+      {
+        "mn": "Тэр газар нутгийн ихэнх нь далай байсан тул талбайн тооцоо газар нутгаар нь бол харагдахаас хамаагүй бага.",
+        "en": "Most of that reach was ocean, so its land area is far smaller than the map suggests."
+      }
+    ]
+  },
+  "han": {
+    "capital": {
+      "mn": "Чанъань",
+      "en": "Chang'an",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Prince_Yide%27s_tomb%2C_towers.jpg/960px-Prince_Yide%27s_tomb%2C_towers.jpg",
+      "source": "https://en.wikipedia.org/wiki/Chang'an",
+      "blurb": "Chang'an, located in China's Shaanxi Province, was the capital city of several Chinese dynasties, including the Western Han and the Tang, from 202 BC to 907 AD."
+    },
+    "ruler": {
+      "mn": "Хань улсын У хаан",
+      "en": "Emperor Wu of Han",
+      "reign": "МЭӨ 141–87",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/e/e9/%E6%BC%A2%E6%AD%A6%E5%B8%9D.jpg",
+      "source": "https://en.wikipedia.org/wiki/Emperor_Wu_of_Han",
+      "blurb": "Emperor Wu of Han (156 – 29 March 87 BC) (Chinese: 漢武帝; pinyin: Hàn Wŭdì), personal name Liu Che (Chinese: 劉徹; pinyin: Liú Chè) and courtesy name Tong (Chinese: 通; pinyin: Tōng), was the seventh emperor of the Han dynasty from 141 to 87 BC."
+    },
+    "facts": [
+      {
+        "mn": "Хятадын үндсэн үндэстэн өөрийгөө өнөөг хүртэл «хань» гэж нэрлэдэг нь энэ гүрний нэрнээс.",
+        "en": "China's majority people still call themselves \"Han\", after this dynasty."
+      },
+      {
+        "mn": "Торгоны зам албан ёсоор энэ үед нээгдсэн — Жан Цянь баруун зүг рүү илгээгдсэнээр.",
+        "en": "The Silk Road opened formally in this period, with Zhang Qian's mission to the west."
+      },
+      {
+        "mn": "Цаас энэ үед зохиогдсон нь мэдээллийг хадгалах өртгийг эрс бууруулсан.",
+        "en": "Paper was invented under the Han, collapsing the cost of keeping records."
+      }
+    ]
+  },
+  "ming": {
+    "capital": {
+      "mn": "Бээжин",
+      "en": "Beijing",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/Skyline_of_Beijing_CBD_with_B-5906_approaching_%2820211016171955%29_%281%29.jpg/960px-Skyline_of_Beijing_CBD_with_B-5906_approaching_%2820211016171955%29_%281%29.jpg",
+      "source": "https://en.wikipedia.org/wiki/Beijing",
+      "blurb": "Beijing, previously romanized as Peking, is the capital city of China."
+    },
+    "ruler": {
+      "mn": "Юнлэ хаан",
+      "en": "Yongle Emperor",
+      "reign": "1402–1424",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Portrait_assis_de_l%27empereur_Ming_Chengzu.jpg/960px-Portrait_assis_de_l%27empereur_Ming_Chengzu.jpg",
+      "source": "https://en.wikipedia.org/wiki/Yongle_Emperor",
+      "blurb": ""
+    },
+    "facts": [
+      {
+        "mn": "Жэн Хэгийн флот Колумбаас 90 жилийн өмнө Африк хүрч байсан — хамгийн том хөлөг нь Колумбын хөлгөөс хэд дахин том байжээ.",
+        "en": "Zheng He's fleets reached Africa ninety years before Columbus, in ships several times the size of his."
+      },
+      {
+        "mn": "Бээжингийн Хориотой хот энэ үед баригдсан — 980 барилга, бараг 100 га талбай.",
+        "en": "Beijing's Forbidden City was built in this period — some 980 buildings across nearly 100 hectares."
+      },
+      {
+        "mn": "Өнөөдөр бидний харж буй Цагаан хэрмийн ихэнх хэсэг нь Мин улсын үеийнх, Хүннүгийн үеийнх биш.",
+        "en": "Most of the Great Wall people see today is Ming work, not the older ramparts."
+      }
+    ]
+  },
+  "rashidun": {
+    "capital": {
+      "mn": "Медина",
+      "en": "Medina",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Al-Masjid_An-Nabawi_%28Bird%27s_Eye_View%29.jpg/960px-Al-Masjid_An-Nabawi_%28Bird%27s_Eye_View%29.jpg",
+      "source": "https://en.wikipedia.org/wiki/Medina",
+      "blurb": ""
+    },
+    "ruler": {
+      "mn": "Умар халиф",
+      "en": "Caliph Umar",
+      "reign": "634–644",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Hagia_Sopia_6163502494_%28cropped%29.jpg/960px-Hagia_Sopia_6163502494_%28cropped%29.jpg",
+      "source": "https://en.wikipedia.org/wiki/Umar",
+      "blurb": ""
+    },
+    "facts": [
+      {
+        "mn": "Хорин таван жилийн дотор Сасанийн Персийг бүрэн, Византийн хагасыг эзэлсэн.",
+        "en": "In twenty-five years it took all of Sasanian Persia and half of Byzantium."
+      },
+      {
+        "mn": "Хоёр эртний гүрэн бие биетэйгээ дайтаж ядарсан яг тэр мөчид гарч ирсэн нь тэлэлтийн хурдны нэг тайлбар.",
+        "en": "It arrived exactly as those two ancient powers had exhausted each other — one reason for the speed."
+      },
+      {
+        "mn": "Исламын хуанли Мухаммедын Мединад нүүсэн 622 оноос эхэлдэг.",
+        "en": "The Islamic calendar counts from Muhammad's move to Medina in 622."
+      }
+    ]
+  },
+  "goldenhorde": {
+    "capital": {
+      "mn": "Сарай",
+      "en": "Sarai",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/%D0%91%D1%83%D0%BB%D0%B3%D0%B0%D1%80%D1%81%D0%BA%D0%BE%D0%B5_%D0%B3%D0%BE%D1%80%D0%BE%D0%B4%D0%B8%D1%89%D0%B5_9.JPG/960px-%D0%91%D1%83%D0%BB%D0%B3%D0%B0%D1%80%D1%81%D0%BA%D0%BE%D0%B5_%D0%B3%D0%BE%D1%80%D0%BE%D0%B4%D0%B8%D1%89%D0%B5_9.JPG",
+      "photo": {
+        "mn": "Зураг: Болгар — Ордны бас нэг хот",
+        "en": "Pictured: Bolghar, another city of the Horde"
+      },
+      "source": "https://en.wikipedia.org/wiki/Bolghar",
+      "blurb": "Bolghar or Bolgar (Russian: Болгарское городище; Tatar: Болгар, بلغار, Bolğar; Chuvash: Аслă Пăлхар, Aslă Pălhar) was intermittently the capital of Volga Bulgaria from the 10th to the 13th centuries, along with Bilyar and Nur-Suvar."
+    },
+    "ruler": {
+      "mn": "Бат хаан",
+      "en": "Batu Khan",
+      "reign": "1227–1255",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/8/85/Batu_Khan_on_the_Throne_by_Rashid_al-Din_%28cropped%29.jpg",
+      "source": "https://en.wikipedia.org/wiki/Batu_Khan",
+      "blurb": "Batu Khan (c. 1205–1255) was a Mongol ruler and founder of the Golden Horde, a constituent of the Mongol Empire established after Genghis Khan's demise."
+    },
+    "facts": [
+      {
+        "mn": "Монголын эзэнт гүрний баруун жигүүр — Чингисийн ач хүү Батын удирдсан улс.",
+        "en": "The western wing of the Mongol Empire, ruled by Genghis's grandson Batu."
+      },
+      {
+        "mn": "Оросын ноёдууд хоёр зуун жилийн турш алба гувчуур төлж, хаан ширээний зөвшөөрлийг Сарайгаас авдаг байв.",
+        "en": "Russian princes paid tribute for two centuries and took their right to rule from Sarai."
+      },
+      {
+        "mn": "Москва хот бусдын алба хураахыг нь хариуцаж авснаараа хүчирхэгжсэн — дараа нь тэр хүчээрээ Ордоос салсан.",
+        "en": "Moscow rose by collecting that tribute for the Horde — and later used the same strength to break from it."
+      }
+    ]
+  },
+  "achaemenid": {
+    "capital": {
+      "mn": "Персеполис",
+      "en": "Persepolis",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/Persepolis_Gate_of_All_Nations_%28cropped%29.jpg/960px-Persepolis_Gate_of_All_Nations_%28cropped%29.jpg",
+      "source": "https://en.wikipedia.org/wiki/Gate_of_All_Nations",
+      "blurb": "The Gate of All Nations (Old Persian: 𐎯𐎢𐎺𐎼𐎰𐎡𐎶𐏐𐎻𐎡𐎿𐎭𐏃𐎹𐎢𐎶, romanized: duvarϑim visadahyum), also known as the Gate of Xerxes, is located in the ruins of the ancient city of Persepolis, Iran."
+    },
+    "ruler": {
+      "mn": "Их Дариус хаан",
+      "en": "Darius the Great",
+      "reign": "МЭӨ 522–486",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Darius_I.jpg/960px-Darius_I.jpg",
+      "source": "https://en.wikipedia.org/wiki/Darius_the_Great",
+      "blurb": "Darius I (Old Persian: 𐎭𐎠𐎼𐎹𐎺𐎢𐏁 Dārayavaʰuš; c. 550 – 486 BCE), commonly known as Darius the Great, was the third King of Kings of the Achaemenid Empire, reigning from 522 BCE until his death in 486 BCE."
+    },
+    "facts": [
+      {
+        "mn": "Тухайн үедээ дэлхийн хүн амын бараг тал хувийг захирч байсан гэж тооцдог — энэ харьцааг хожим хэн ч давтаагүй.",
+        "en": "It is reckoned to have ruled nearly half the world's people — a share no empire has matched since."
+      },
+      {
+        "mn": "Хааны зам 2,700 км урт байсан бөгөөд элч долоо хоногт туулдаг замыг жирийн аялагч гурван сар явдаг байв.",
+        "en": "The Royal Road ran 2,700 km; a courier crossed in a week what took a traveller three months."
+      },
+      {
+        "mn": "Кирийн цилиндрийг хүний эрхийн анхны тунхаглалуудын нэг гэж үздэг — эзлэгдсэн ард түмнийг шашин, зан заншлаа хадгалахыг зөвшөөрсөн.",
+        "en": "The Cyrus Cylinder is often called an early charter of rights — conquered peoples kept their religion and customs."
+      }
+    ]
+  },
+  "tang": {
+    "capital": {
+      "mn": "Чанъань",
+      "en": "Chang'an",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Prince_Yide%27s_tomb%2C_towers.jpg/960px-Prince_Yide%27s_tomb%2C_towers.jpg",
+      "source": "https://en.wikipedia.org/wiki/Chang'an",
+      "blurb": "Chang'an, located in China's Shaanxi Province, was the capital city of several Chinese dynasties, including the Western Han and the Tang, from 202 BC to 907 AD."
+    },
+    "ruler": {
+      "mn": "Тан улсын Тайзун хаан",
+      "en": "Emperor Taizong",
+      "reign": "626–649",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/TangTaizong.jpg/960px-TangTaizong.jpg",
+      "source": "https://en.wikipedia.org/wiki/Emperor_Taizong_of_Tang",
+      "blurb": "Emperor Taizong of Tang (28 January 598 – 10 July 649), previously Prince of Qin, personal name Li Shimin, was the second emperor of the Tang dynasty of China, ruling from 626 to 649."
+    },
+    "facts": [
+      {
+        "mn": "Чанъань тухайн үедээ дэлхийн хамгийн том хот байсан — сая орчим хүнтэй, гуравны нэг нь гадаадынхан.",
+        "en": "Chang'an was then the largest city on earth — around a million people, a third of them foreign."
+      },
+      {
+        "mn": "Хэвлэх урлаг энэ үед үүссэн: одоо байгаа хамгийн эртний огноотой хэвлэмэл ном 868 оных.",
+        "en": "Printing began here: the oldest dated printed book in existence is from 868."
+      },
+      {
+        "mn": "Их анги дамжсан төрийн шалгалтын тогтолцоо энэ үед бэхжсэн нь язгуур гаралгүй хүн түшмэл болох замыг нээсэн.",
+        "en": "The imperial examination system matured here, opening office to men without noble birth."
+      }
+    ]
+  },
+  "macedon": {
+    "capital": {
+      "mn": "Вавилон",
+      "en": "Babylon",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Ishtar_Gate.jpg/960px-Ishtar_Gate.jpg",
+      "source": "https://en.wikipedia.org/wiki/Babylon",
+      "blurb": "Babylon ( BAB-il-on) was an ancient city located on the lower Euphrates river in southern Mesopotamia, within modern-day Hillah, Iraq, about 85 kilometres (53 miles) south of modern-day Baghdad."
+    },
+    "ruler": {
+      "mn": "Македонский Александр",
+      "en": "Alexander the Great",
+      "reign": "МЭӨ 336–323",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Alexander_Mosaic_detail_of_Alexander_the_Great_%283x4_cropped%29.jpg/960px-Alexander_Mosaic_detail_of_Alexander_the_Great_%283x4_cropped%29.jpg",
+      "source": "https://en.wikipedia.org/wiki/Alexander_the_Great",
+      "blurb": "Alexander III of Macedon (Ancient Greek: Ἀλέξανδρος, romanized: Aléxandros; 20/21 July 356 BC – 10/11 June 323 BC), most commonly known as Alexander the Great, was king of the ancient Greek kingdom of Macedon."
+    },
+    "facts": [
+      {
+        "mn": "Арван гурван жилийн дотор Грекээс Энэтхэг хүртэл байлдан дагуулж, гучин хоёр насандаа нас барсан.",
+        "en": "He conquered from Greece to India in thirteen years and died at thirty-two."
+      },
+      {
+        "mn": "Нэрээ өгсөн хорь орчим хот байгуулсан — Египетийн Александри нь хамгийн алдартай нь.",
+        "en": "He founded some twenty cities bearing his name; Alexandria in Egypt is the famous one."
+      },
+      {
+        "mn": "Нэг ч тулалдаанд ялагдаж байгаагүй ч эзэнт гүрэн нь үхлийнх нь дараа тэр дороо задарсан.",
+        "en": "He never lost a battle, yet the empire broke apart immediately after his death."
+      }
+    ]
+  },
+  "ottoman": {
+    "capital": {
+      "mn": "Константинополь",
+      "en": "Constantinople",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Byzantine_Constantinople-en.png/960px-Byzantine_Constantinople-en.png",
+      "source": "https://en.wikipedia.org/wiki/Constantinople",
+      "blurb": "Constantinople, the modern Istanbul, was the capital of the Roman and Byzantine Empire from 330 until its takeover by the Ottoman Empire in 1453."
+    },
+    "ruler": {
+      "mn": "Сүлэйман сүрлэг хаан",
+      "en": "Suleiman the Magnificent",
+      "reign": "1520–1566",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/EmperorSuleiman.jpg/960px-EmperorSuleiman.jpg",
+      "source": "https://en.wikipedia.org/wiki/Suleiman_the_Magnificent",
+      "blurb": "Suleiman I (6 November 1494 – 6 September 1566), commonly known as Suleiman the Magnificent, was the Ottoman sultan from 1520 to 1566."
+    },
+    "facts": [
+      {
+        "mn": "1453 онд Константинополь унасныг олон түүхч Дундад зууны төгсгөл гэж тэмдэглэдэг.",
+        "en": "The fall of Constantinople in 1453 is where many historians end the Middle Ages."
+      },
+      {
+        "mn": "Зургаан зуун гаруй жил оршиж, Дэлхийн нэгдүгээр дайны дараа л татан буугдсан.",
+        "en": "It lasted over six centuries, dissolving only after the First World War."
+      },
+      {
+        "mn": "Европ руу очих газар замыг хаасан нь Португал, Испанийг далайн зам хайхад хүргэсэн — Америк нээгдэх шалтгааны нэг.",
+        "en": "By closing the land routes east it pushed Portugal and Spain to look for sea routes — one reason the Americas were reached."
+      }
+    ]
+  },
+  "maurya": {
+    "capital": {
+      "mn": "Паталипутра",
+      "en": "Pataliputra",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Pataliputra6.jpg/960px-Pataliputra6.jpg",
+      "source": "https://en.wikipedia.org/wiki/Pataliputra",
+      "blurb": "Pataliputra (IAST: Pāṭaliputra), adjacent to modern-day Patna, Bihar, was a city in ancient India, originally built by Magadha ruler Ajatashatru in 490 BCE, as a small fort (Pāṭaligrāma) near the Ganges river."
+    },
+    "ruler": {
+      "mn": "Ашока хаан",
+      "en": "Ashoka",
+      "reign": "МЭӨ 268–232",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/2/28/Ashoka%27s_visit_to_the_Ramagrama_stupa_Sanchi_Stupa_1_Southern_gateway.jpg",
+      "source": "https://en.wikipedia.org/wiki/Ashoka",
+      "blurb": "Ashoka, also known as Asoka or Aśoka ( ə-SHOH-kə; Sanskrit: [ɐˈɕoːkɐ], IAST: Aśoka; c. 304 – 232 BCE), most commonly known as Ashoka the Great, was Emperor of Magadha from c. 268 BCE until his death, and the third ruler from the Mauryan dynasty."
+    },
+    "facts": [
+      {
+        "mn": "Ашока Калингагийн дайны хядлагыг үзсэнийхээ дараа буддын шашинд орж, байлдан дагуулахаа больсон.",
+        "en": "After the slaughter at Kalinga, Ashoka turned to Buddhism and stopped conquering."
+      },
+      {
+        "mn": "Түүний зарлигуудыг сийлсэн багана, хаднууд өнөөг хүртэл зогсож байна — эзэнт гүрний захиас өөрөө үлдсэн ховор жишээ.",
+        "en": "His edicts, carved on pillars and rock, still stand — a rare case of an empire's own words surviving."
+      },
+      {
+        "mn": "Энэтхэгийн төрийн далбаан дээрх хүрд, төрийн сүлд дэх арслан хоёулаа Ашокагийн баганаас авагдсан.",
+        "en": "The wheel on India's flag and the lions of its state emblem both come from Ashoka's pillars."
+      }
+    ]
+  },
+  "roman": {
+    "capital": {
+      "mn": "Ром",
+      "en": "Rome",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Trevi_Fountain%2C_Rome%2C_Italy_2_-_May_2007.jpg/960px-Trevi_Fountain%2C_Rome%2C_Italy_2_-_May_2007.jpg",
+      "source": "https://en.wikipedia.org/wiki/Rome",
+      "blurb": "Rome is the capital city and most populated comune (municipality) of Italy."
+    },
+    "ruler": {
+      "mn": "Траян эзэн хаан",
+      "en": "Trajan",
+      "reign": "98–117",
+      "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Traianus_Glyptothek_Munich_72.jpg/960px-Traianus_Glyptothek_Munich_72.jpg",
+      "source": "https://en.wikipedia.org/wiki/Trajan",
+      "blurb": "Trajan ( TRAY-jən; born Marcus Ulpius Traianus, 18 September 53 – c. 9 August 117) was a Roman emperor from AD 98 to 117, remembered as the second of the Five Good Emperors of the Nerva–Antonine dynasty."
+    },
+    "facts": [
+      {
+        "mn": "Газар дундын тэнгисийг бүхэлд нь тойрон эзэлсэн цорын ганц гүрэн — Ромчууд түүнийг «бидний тэнгис» гэдэг байв.",
+        "en": "The only power ever to hold the entire Mediterranean shore — Romans called it \"our sea\"."
+      },
+      {
+        "mn": "Барьсан замын нийт урт 400,000 км орчим, үүний 80,000 нь чулуун хучилттай.",
+        "en": "It built roughly 400,000 km of roads, some 80,000 of them stone-paved."
+      },
+      {
+        "mn": "Ромын бетоноор баригдсан Пантеоны бөмбөгөр өнөөг хүртэл дэлхийн хамгийн том арматургүй бетон бөмбөгөр хэвээр.",
+        "en": "The Pantheon's dome, in Roman concrete, is still the largest unreinforced concrete dome in the world."
+      }
+    ]
+  }
+}

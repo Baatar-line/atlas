@@ -187,6 +187,11 @@ export default class BigBangLayout extends React.Component<Props, any> {
     spNeeds: false, bigText: false, globeCountry: null, globeHover: null, globeFilter: null,
     globeQuery: '', globeReady: false, countrySites: [] as CountrySiteRow[], globeActiveSite: null as number | null,
     globeEra: null as number | null, globeEmpireIds: [] as string[], globeTimelineTab: 'mongol' as 'mongol' | 'top',
+    // Off by default: the level axis is what the stylised globe was drawn for.
+    globeTilt: false,
+    // public/assets/empire-dossiers.json, fetched the first time the empires tab
+    // is opened rather than on mount — it is 48 kB that only /globe ever reads.
+    empireDossiers: null as Record<string, any> | null,
     showScenicForm: false,
     showEventForm: false,
     showPlaceForm: false,
@@ -656,11 +661,25 @@ export default class BigBangLayout extends React.Component<Props, any> {
     // it, zooming out shows several duplicate Earths instead of one.
     const layer = window.L.tileLayer(SOURCES[0].url, { subdomains, maxZoom: 19, noWrap: true }).addTo(m);
     let idx = 0, errors = 0, loaded = false, timer: any = null;
+    // A source is given this long to prove itself before anything may switch
+    // away from it again. Without it the two triggers below can fire back to
+    // back — a flyToBounds cancels a screen of in-flight tile requests, every
+    // one of those counts as an error, and four of them are reached before a
+    // single tile from the new source has had time to arrive. The cascade then
+    // repeats on the next source, and the next, and each switch calls setUrl,
+    // which drops every tile on the map and re-requests it. Cycling faster than
+    // tiles can load, the map never settles on anything and stays empty, which
+    // is the "map disappeared after moving" case rather than a dead source.
+    const SETTLE_MS = 5000;
+    let switchedAt = 0;
     const armTimeout = () => {
       if (timer) clearTimeout(timer);
-      timer = setTimeout(() => { if (!loaded) tryNext(); }, 3000);
+      timer = setTimeout(() => { if (!loaded) tryNext(); }, SETTLE_MS);
     };
     const tryNext = () => {
+      const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+      if (now - switchedAt < SETTLE_MS) { armTimeout(); return; }
+      switchedAt = now;
       // Used to stop for good once the last source (OSM) also errored —
       // leaving the map permanently blank for the rest of the session, only
       // recoverable with a full page refresh. A burst of near-simultaneous
@@ -673,8 +692,12 @@ export default class BigBangLayout extends React.Component<Props, any> {
       idx = (idx + 1) % SOURCES.length;
       errors = 0; loaded = false;
       const next = SOURCES[idx];
+      // Subdomains first: setUrl redraws on the spot, and the redraw builds its
+      // URLs from whatever options.subdomains says at that moment. Setting it
+      // afterwards means the first batch of tiles after a switch is addressed
+      // with the previous source's subdomains.
+      layer.options.subdomains = next.subdomains || 'abc';
       layer.setUrl(next.url);
-      if (next.subdomains) layer.options.subdomains = next.subdomains;
       armTimeout();
     };
     layer.on('tileload', () => {
@@ -694,6 +717,20 @@ export default class BigBangLayout extends React.Component<Props, any> {
   }
 
   // ── globe ──
+  // The capital / ruler / facts cards for the 25 largest empires. Fetched at
+  // most once per session, the first time the empires tab is opened, and left
+  // null on failure — every consumer treats a missing dossier as "no cards",
+  // so a dead network costs the panel and nothing else on the page.
+  _dossierLoad: Promise<void> | null = null;
+  loadEmpireDossiers() {
+    if (this._dossierLoad) return this._dossierLoad;
+    this._dossierLoad = fetch('/assets/empire-dossiers.json')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d && this._mounted) this.setState({ empireDossiers: d }); })
+      .catch(() => { this._dossierLoad = null; });
+    return this._dossierLoad;
+  }
+
   handleGlobeRef = (el: any) => {
     this._globeEl = el || null;
     if (el) this.maybeMountGlobe();
@@ -713,6 +750,7 @@ export default class BigBangLayout extends React.Component<Props, any> {
         if (this.state.mongoliaFlagOverride) eng.setMongoliaFlag(this.state.mongoliaFlagOverride);
         // Survives a remount (navigating off /globe and back) — the year
         // buttons keep their state in React, the engine is rebuilt from zero.
+        if (this.state.globeTilt) eng.setAxialTilt(true);
         if (this.state.globeEra) eng.setEmpireYear(this.state.globeEra);
         if (this.state.globeEmpireIds.length) eng.setEmpires(empireSel(this.state.globeEmpireIds))?.catch?.(() => { /* ignore */ });
       },
@@ -2088,8 +2126,19 @@ export default class BigBangLayout extends React.Component<Props, any> {
       travelNote: lang === 'en' ? 'Ranks 1–7: official 2024 figures. 8–20: representative estimates.' : 'Эрэмбэ 1–7: 2024 оны албан ёсны тоо. 8–20: төлөөллийн тооцоо.',
       travelRows: (browserWindow?.TRAVEL_ORIGINS || []).map((o) => ({ rank: o.rank, country: o.country, v: o.v.toLocaleString('en-US'), est: !!o.est })),
       globeTitle: lang === 'en' ? 'The World Archive' : 'Дэлхийн архив',
-      globeHint: lang === 'en' ? 'Drag to spin, scroll to zoom. Click a country to open its archive.' : 'Чирж эргүүлээд, scroll-оор томруулна. Улс дээр дарж архивыг нээ.',
       globeSearchPh: lang === 'en' ? 'Search a country…' : 'Улс хайх…',
+      // Stands the globe upright and holds it there: it can still be turned
+      // about that axis, but nothing tips it off vertical until the lock is
+      // released — dragging up and down included.
+      globeTiltOn: this.state.globeTilt,
+      globeTiltLabel: lang === 'en'
+        ? (this.state.globeTilt ? 'Axis locked upright — click to free it' : 'Lock the axis upright: turn only, never tip')
+        : (this.state.globeTilt ? 'Тэнхлэг босоо түгжээтэй — тайлахыг дар' : 'Тэнхлэгийг босоо түгжих: зөвхөн эргэнэ, хазайхгүй'),
+      globeToggleTilt: () => {
+        const next = !this.state.globeTilt;
+        this.setState({ globeTilt: next });
+        if (this.globeEngine?.setAxialTilt) this.globeEngine.setAxialTilt(next);
+      },
       globeHover: this.state.globeHover, globeShowHover: !!this.state.globeHover && !this.state.globeCountry,
       globeQuery: this.state.globeQuery || '', globeOnQuery: (ev: any) => this.setState({ globeQuery: ev.target.value }),
       globeFilters: ([['read', lang === 'en' ? 'Read' : 'Унших'], ['listen', lang === 'en' ? 'Listen' : 'Сонсох'], ['watch', lang === 'en' ? 'Watch' : 'Үзэх']] as [string, string][]).map((k) => {
@@ -2099,8 +2148,6 @@ export default class BigBangLayout extends React.Component<Props, any> {
       globeHasResults: res.length > 0,
       globeResults: res.map((c) => ({ name: c.name, region: c.region, pick: () => { this.setState({ globeQuery: '' }); if (this.globeEngine) this.globeEngine.selectByName(c.name); } })),
       globeHasCard: !!gc, gcName: gc ? gc.name : '', gcRegion: gc ? gc.region : '', gcDesc: gc ? gc.description : '', gcCats: gc ? gc.categories : [],
-      gcSitesLabel: lang === 'en' ? 'Most famous places' : 'Хамгийн алдартай газрууд',
-      gcNatureLabel: lang === 'en' ? 'Natural wonders' : 'Байгалийн үзэсгэлэн',
       gcSites: gc ? sitesFor(gc, lang, this.state.countrySites) : [],
       globeActiveSite: this.state.globeActiveSite,
       globeSelectSite: (position: number) => { this.setState({ globeActiveSite: position }); if (this.globeEngine) this.globeEngine.setActiveSite(position); },
@@ -2124,6 +2171,7 @@ export default class BigBangLayout extends React.Component<Props, any> {
       globeTab: this.state.globeTimelineTab,
       globeSetTab: (tab: 'mongol' | 'top') => {
         if (this.state.globeTimelineTab === tab) return;
+        if (tab === 'top') this.loadEmpireDossiers();
         this.setState({ globeTimelineTab: tab, globeEra: null, globeEmpireIds: [] });
         if (this.globeEngine) { this.globeEngine.setEmpireYear(null); this.globeEngine.setEmpires([]); }
       },
@@ -2147,6 +2195,7 @@ export default class BigBangLayout extends React.Component<Props, any> {
         set: () => {
           const cur: string[] = this.state.globeEmpireIds;
           if (!cur.includes(e.id) && cur.length >= GLOBE_EMPIRE_MAX) return;   // full — switch one off first
+          this.loadEmpireDossiers();   // no-op after the first call; covers any route into the tab
           const next = cur.includes(e.id) ? cur.filter((id) => id !== e.id) : [...cur, e.id];
           this.setState({ globeEmpireIds: next, globeQuery: '' });
           if (this.globeEngine) {
@@ -2170,6 +2219,39 @@ export default class BigBangLayout extends React.Component<Props, any> {
           // viewer to assume the outline is as exact as the others'.
           approx: e.approx ? (lang === 'en' ? 'approx.' : 'ойролцоо') : '',
         })),
+      // The three cards down the right: seat of power, the ruler who took the
+      // ground, and a few facts. Only with exactly one empire lit — the cards
+      // speak about "this empire" throughout, and with two on the globe there
+      // is no answer to which one that is. Empty until the JSON has landed.
+      globeEmpireDossier: (() => {
+        if (this.state.globeEmpireIds.length !== 1) return null;
+        const e = TOP_EMPIRES.find((x) => x.id === this.state.globeEmpireIds[0]);
+        const d = this.state.empireDossiers?.[this.state.globeEmpireIds[0]];
+        if (!e || !d) return null;
+        const side = (part: any) => ({
+          name: lang === 'en' ? part.en : part.mn,
+          reign: part.reign ? (lang === 'en' ? String(part.reign).replace('МЭӨ', 'BC') : part.reign) : '',
+          // BgMedia takes a whole CSS background value, not a bare URL — it
+          // pulls the url(...) out to preload and then sets this same string as
+          // background-image. Handed a bare URL it finds no url(...), decides
+          // there is no photo to wait for, and paints an invalid value: a blank
+          // card. Same scrim as the country cards for one look across both.
+          img: part.img ? 'linear-gradient(rgba(11,10,8,.12), rgba(11,10,8,.28)), url("' + part.img + '")' : '',
+          photo: part.photo ? (lang === 'en' ? part.photo.en : part.photo.mn) : '',
+          source: part.source || '',
+        });
+        return {
+          id: e.id,
+          color: e.color,
+          empire: lang === 'en' ? e.en : e.mn,
+          capital: side(d.capital),
+          ruler: side(d.ruler),
+          facts: (d.facts || []).map((f: any) => (lang === 'en' ? f.en : f.mn)),
+          labels: lang === 'en'
+            ? { capital: 'Seat of power', ruler: 'Who took it', facts: 'Worth knowing' }
+            : { capital: 'Нийслэл', ruler: 'Эзэлж авсан хаан', facts: 'Сонирхолтой баримт' },
+        };
+      })(),
       // Only with exactly one empire on the globe, and only when there was
       // still something left to find: at 1920 the map is complete and nothing
       // is washed out, so the note would be explaining an effect that isn't

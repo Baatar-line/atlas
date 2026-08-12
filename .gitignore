@@ -9,3 +9,8 @@ dist
 
 # Source GeoJSON for scripts/build-empires.mjs — re-downloadable, ~12 MB
 .cache/
+
+# A scratch browser profile left behind by the doc-generation run. It is not a
+# deliverable — it holds that browser's Cookies, Login Data, History and Trust
+# Tokens, none of which belong in a repo, least of all a public one.
+deliverables/**/edge_profile/

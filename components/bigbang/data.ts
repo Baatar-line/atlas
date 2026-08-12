@@ -209,7 +209,7 @@ export const SUGGESTS = [
 // capital city's most beautiful scene, [1]-[2] two culture/history landmarks
 // that set the country apart, [3]-[5] three natural scenic wonders. The globe
 // page renders [0]-[2] on the right panel and [3]-[5] on the left (see
-// gcSitesLabel/gcNatureLabel in BigBangLayout.tsx). Third tuple slot is a real
+// rightSites/leftSites in app/(bigbang)/globe/page.tsx). Third tuple slot is a real
 // photo of that specific landmark (Wikimedia Commons, via Wikipedia's
 // pageimages API) — not a generic stock photo for the category.
 export const FAMOUS_SITES: Record<string, [string, string, string][]> = {

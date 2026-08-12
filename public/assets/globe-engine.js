@@ -732,8 +732,15 @@
         px = e.clientX; py = e.clientY;
         moved += Math.abs(dx) + Math.abs(dy);
         var qy = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), dx * 0.005);
-        var qx = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), dy * 0.005);
-        self.group.quaternion.premultiply(qy).premultiply(qx);
+        self.group.quaternion.premultiply(qy);
+        // Sideways always spins the globe about its own axis. Up and down tips
+        // it off that axis, which is the one thing the lock exists to prevent —
+        // so with the lock on a vertical drag does nothing, the way it does
+        // nothing to a globe sitting in its stand.
+        if (!self.axialTilt) {
+          var qx = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), dy * 0.005);
+          self.group.quaternion.premultiply(qx);
+        }
         self.targetQ.copy(self.group.quaternion);
         self.lastInteract = performance.now();
       } else {
@@ -839,12 +846,27 @@
   GlobeEngine.prototype.quatFor = function (lat, lng) {
     var d = this.llToVec(lat, lng, 1).normalize();
     var ry = Math.atan2(-d.x, d.z);
+    var qy = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), ry);
+    // Under the axis lock the globe turns but never tips, so framing a place
+    // means bringing its meridian round to face the camera and stopping there.
+    // Centring the latitude as well takes an X rotation, and any X rotation in
+    // `group` is exactly what carries the poles off vertical.
+    if (this.axialTilt) return qy;
     var dpz = -d.x * Math.sin(ry) + d.z * Math.cos(ry);
     var rx = Math.atan2(d.y, dpz);
-    var qy = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), ry);
     var qx = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), rx);
     return qx.multiply(qy);
   };
+
+  // The part of a spin that is rotation about the axis, with any tipping thrown
+  // away (the twist of a swing-twist split, taken about Y). Used when the lock
+  // goes on, to drop whatever tilt-breaking rotation earlier drags had built up.
+  function twistAboutY(q) {
+    var t = new THREE.Quaternion(0, q.y, 0, q.w);
+    // Pole-on, the twist is undefined rather than small — there is no meridian
+    // facing the camera to preserve, so start the spin from zero.
+    return t.lengthSq() > 1e-8 ? t.normalize() : new THREE.Quaternion();
+  }
 
   GlobeEngine.prototype.flyTo = function (lat, lng) {
     this.targetQ = this.quatFor(lat, lng);
@@ -918,6 +940,40 @@
     this.lastInteract = performance.now();
     this.buildArchiveDots(null);
     if (this.cb.onSelect) this.cb.onSelect(null);
+  };
+
+  // Stands the globe upright and holds it there: poles straight up and down,
+  // and the only movement left is turning about that standing axis.
+  //
+  // The lean is deliberately zero. The axis a globe stands on and the axis it
+  // turns about are separate things here — `tiltGroup` holds the lean and
+  // `group` holds the spin — and this lock is about the second. It keeps the
+  // spin a pure rotation about Y, so nothing can tip the poles off vertical:
+  // a vertical drag is ignored, framing a country only brings its meridian
+  // round (see quatFor), and switching the lock on flattens whatever tipping
+  // earlier drags had already left behind.
+  //
+  // Off, all of that is released and the globe can be turned any way again.
+  GlobeEngine.prototype.setAxialTilt = function (on) {
+    var q = new THREE.Quaternion();          // upright — no lean, locked or not
+    this.tiltQuat = q.clone();
+    this.uprightQuat = q.clone();
+    this.targetTilt = q.clone();     // animate.slerp walks the globe over to it
+    this.axialTilt = !!on;
+    // Pressing the button has to land upright, not upright-ish from wherever the
+    // globe had been dragged to. Earlier vertical drags leave tipping inside
+    // `group`, and that tipping is exactly what puts the poles off vertical — so
+    // keep only the spin about the axis and drop the rest. Applied to the live
+    // quaternion as well as the target because the idle auto-spin overwrites the
+    // target every frame, and would swallow it.
+    if (on) {
+      var t = twistAboutY(this.group.quaternion);
+      this.group.quaternion.copy(t);
+      this.targetQ.copy(t);
+    }
+    // lastInteract is deliberately not touched: an empire on the globe parks it
+    // far in the future to stop the idle spin drifting it away, and resetting it
+    // here would hand that drift back.
   };
 
   GlobeEngine.prototype.setFilter = function (filter) { this.filter = filter; };
