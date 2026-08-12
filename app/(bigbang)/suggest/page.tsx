@@ -50,15 +50,33 @@ function useMarqueeDrift(pxPerSecond = 22) {
     let last = 0;
     // Held while the pointer is anywhere over the rail — these cards are
     // links, and a link that slides out from under the cursor is a target,
-    // not a link — and for a moment after any hands-on scroll, so momentum
-    // has somewhere to land before the drift takes the wheel back.
+    // not a link — and for a moment after a touch lands, so a finger about to
+    // swipe isn't racing the drift.
     let holdUntil = 0;
+    // Set once the visitor has scrolled the rail themselves; see onScroll.
+    let taken = false;
+    // The last scrollLeft this hook wrote, so onScroll can tell our own
+    // movement from the visitor's. -1 until the first frame runs.
+    let written = -1;
     // Math.max, so a wheel tick inside a hover can only extend the hold, not
     // cut the pointer's own indefinite one short and start the rail moving
     // under a cursor that never left.
     const hold = () => { holdUntil = Math.max(holdUntil, performance.now() + 900); };
-    const enter = () => { holdUntil = Infinity; };
-    const leave = () => { holdUntil = performance.now() + 400; };
+    // Mouse only. A touch pointer stops existing when the finger lifts, and
+    // the browser fires pointerleave for it — which would read every swipe as
+    // "the visitor moved away" and start the rail again a moment after they
+    // deliberately stopped it. A phone has no hover to give, so on a phone
+    // the rail simply stays where it was put.
+    const enter = (e: PointerEvent) => { if (e.pointerType === 'mouse') holdUntil = Infinity; };
+    const leave = (e: PointerEvent) => {
+      if (e.pointerType !== 'mouse') return;
+      // The cursor leaving is the visitor letting go, so a rail they had
+      // scrolled by hand is released too and drifts again from wherever they
+      // left it — it does not jump back to where it would have got to.
+      taken = false;
+      holdUntil = performance.now() + 400;
+      start();
+    };
 
     const step = (now: number) => {
       raf = requestAnimationFrame(step);
@@ -69,22 +87,67 @@ function useMarqueeDrift(pxPerSecond = 22) {
       if (!dt || dt > 100 || now < holdUntil || wrap <= 0) return;
       const next = el.scrollLeft + (pxPerSecond * dt) / 1000;
       el.scrollLeft = next >= wrap ? next - wrap : next;
+      // Read back rather than storing what we meant to set: the browser
+      // rounds scrollLeft, and comparing against our intended value would
+      // make every frame look like somebody else had moved the rail.
+      written = el.scrollLeft;
     };
 
-    raf = requestAnimationFrame(step);
+    const start = () => {
+      if (raf || taken) return;
+      // Reset, so the first frame after a resume measures from now instead of
+      // from whenever the rail last ran.
+      last = 0;
+      raf = requestAnimationFrame(step);
+    };
+    const stop = () => {
+      if (!raf) return;
+      cancelAnimationFrame(raf);
+      raf = 0;
+    };
+
+    // The rail drifts to say "there is more along here". Once a visitor has
+    // scrolled it themselves they know that, and have said which part of it
+    // they want to look at — so it stops and stays put, instead of creeping
+    // back a moment later and carrying their choice away with it. It is
+    // released again when the cursor leaves (see `leave` above), which on a
+    // desktop is the visitor moving on, and on a phone never happens.
+    //
+    // Detected from the scroll position rather than from input events: a
+    // wheel event fires on whatever is under the cursor, so reading page
+    // scroll as intent would stop the rail merely for scrolling past it, and
+    // a touchstart is as likely to be a tap on a card as the start of a
+    // swipe. A scrollLeft we did not write is unambiguous, and it catches
+    // every way of moving a rail — swipe, trackpad, shift+wheel, keyboard,
+    // dragging the bar itself.
+    const onScroll = () => {
+      if (taken || Math.abs(el.scrollLeft - written) <= 1.5) return;
+      taken = true;
+      stop();
+    };
+
+    // Nothing below the fold needs animating. Beyond saving the work, it
+    // stops the rail travelling a screen's width while the visitor is reading
+    // something else and then being found somewhere they never left it.
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((en) => en.isIntersecting)) start(); else stop();
+    });
+    io.observe(el);
+
+    el.addEventListener('scroll', onScroll, { passive: true });
     el.addEventListener('pointerenter', enter);
     el.addEventListener('pointerleave', leave);
     el.addEventListener('wheel', hold, { passive: true });
     el.addEventListener('touchstart', hold, { passive: true });
-    el.addEventListener('touchmove', hold, { passive: true });
     return () => {
-      cancelAnimationFrame(raf);
+      stop();
       ro.disconnect();
+      io.disconnect();
+      el.removeEventListener('scroll', onScroll);
       el.removeEventListener('pointerenter', enter);
       el.removeEventListener('pointerleave', leave);
       el.removeEventListener('wheel', hold);
       el.removeEventListener('touchstart', hold);
-      el.removeEventListener('touchmove', hold);
     };
   }, [pxPerSecond]);
   return ref;
