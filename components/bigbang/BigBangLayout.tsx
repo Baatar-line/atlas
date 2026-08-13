@@ -121,6 +121,8 @@ export default class BigBangLayout extends React.Component<Props, any> {
   // render (mount finishing, or literally anything else re-rendering this)
   // picks up the now-ready image, so nothing is lost by skipping the update.
   _mounted = false;
+  // Pending "the cursor left the category list" clear — see clearActive.
+  _activeClear = 0;
   // Backstop for the aimag hero crossfade — see aimagBgLayers/aimagBgBackstop
   // in render(). Switching straight from aimag A to aimag B fades A:1→0 and
   // B:0→1 at the same time (a real two-photo dissolve, kept on purpose); at
@@ -388,6 +390,7 @@ export default class BigBangLayout extends React.Component<Props, any> {
 
   componentWillUnmount() {
     this._mounted = false;
+    window.clearTimeout(this._activeClear);
     this.unmountGlobe();
     this.unmountMainMap();
     window.removeEventListener('focus', this.onWindowFocus);
@@ -1629,7 +1632,11 @@ export default class BigBangLayout extends React.Component<Props, any> {
         num: c.num, count: catCount, name: lang === 'en' ? c.nameEn : c.name,
         color: isA ? '#f6f1e7' : (active === -1 ? 'rgba(242,237,227,.72)' : 'rgba(242,237,227,.48)'),
         shift: isA ? 'translateX(12px)' : 'translateX(0)', barOpacity: isA ? 1 : 0,
-        activate: () => this.setState({ active: i }), open: () => this.openCat(c.slug),
+        // Cancels any pending clear as well as setting the new category —
+        // coming back to the list from the preview cards leaves a clear in
+        // flight that would otherwise land 220ms later and undo this.
+        activate: () => { window.clearTimeout(this._activeClear); this.setState({ active: i }); },
+        open: () => this.openCat(c.slug),
         isActive: isA,
         // Sub-categories flown out under the nav item on hover — clicking one
         // jumps straight into the category page pre-filtered to that sub
@@ -1646,6 +1653,36 @@ export default class BigBangLayout extends React.Component<Props, any> {
       const override = this.state.catBgOverride[c.slug] || '';
       return { bg: catBgOf(c, override), opacity: active === i ? 1 : 0 };
     });
+
+    // Home's bottom-right corner: the three best-rated places in whichever
+    // category the cursor is on. Empty with nothing hovered and empty again on
+    // mouseleave, because it is an answer to the hover rather than a fixture —
+    // the same `active` index that swaps the background photo behind it.
+    //
+    // Filtered by the chosen aimag for the same reason the count beside each
+    // category name is: a corner showing Khövsgöl's best three while the list
+    // says Ulaanbaatar has seven would be contradicting itself on one screen.
+    //
+    // idx is captured before the sort, not after — openPlace() puts a position
+    // in the URL and PlaceDetail reads it back out of this category's own item
+    // list, so a rank in the sorted top-three would open the wrong place.
+    const activeCat = active >= 0 ? cats[active] : null;
+    const previewCards = activeCat
+      ? activeCat.items
+        .map((it, idx) => ({ it, idx }))
+        .filter((o) => aimag === 'Бүгд' || (o.it.aimag || 'Улаанбаатар') === aimag)
+        .map((o) => ({ ...o, rating: ratingOf(o.it.name) }))
+        .sort((a, b) => +b.rating - +a.rating)
+        .slice(0, 3)
+        .map((o) => ({
+          key: activeCat.slug + '-' + o.idx,
+          name: o.it.name,
+          meta: o.it.meta,
+          rating: o.rating,
+          thumb: itemThumbOf(o.it.img),
+          open: () => this.openPlace(activeCat, o.idx),
+        }))
+      : [];
 
 
     const placeCountFor = (a: string) => cats.reduce((n, c) => n + c.items.filter((it) => (it.aimag || 'Улаанбаатар') === a).length, 0);
@@ -2474,7 +2511,7 @@ export default class BigBangLayout extends React.Component<Props, any> {
         thumb: 'linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.15)), url("' + imgUrl(b.image || '', 500) + '")',
         logoUrl: b.logo ? imgUrl(b.logo, 80) : '',
       })),
-      suggests, cats, navCats, bgLayers, topItems: topItems2,
+      suggests, cats, navCats, bgLayers, previewCards, topItems: topItems2,
       travelApps: TRAVEL_APPS.map((a) => {
         const raw = (this.state.travelAppsBgOverride || {})[a.slug] || '';
         return {
@@ -2483,7 +2520,18 @@ export default class BigBangLayout extends React.Component<Props, any> {
           bgIsVideo: isVideoUrl(raw), bgRawUrl: raw,
         };
       }),
-      clearActive: () => this.setState({ active: -1 }),
+      // Deferred, because the preview cards the hover produces sit in the
+      // opposite corner of the screen from the list that produces them: any
+      // path the cursor takes to reach them leaves the list first, and an
+      // immediate clear unmounted the cards before they could be clicked.
+      // The grace period is long enough to cross the gap and short enough that
+      // the corner still reads as answering the hover. holdActive cancels it
+      // for as long as the cursor is actually on the cards.
+      clearActive: () => {
+        window.clearTimeout(this._activeClear);
+        this._activeClear = window.setTimeout(() => this.setState({ active: -1 }), 220);
+      },
+      holdActive: () => window.clearTimeout(this._activeClear),
       goHome: () => { navigate('/'); this.setState({ active: -1, locOpen: false }); },
       locOpen, toggleLoc: () => this.setState({ locOpen: !locOpen }),
       aimagLabel: aimagName(aimag, lang),

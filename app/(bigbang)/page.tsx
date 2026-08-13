@@ -150,9 +150,62 @@ export default function Home() {
               <div className="absolute right-[80px] top-[110px] z-[7] max-w-[240px] text-right text-[12px] text-[rgba(242,237,227,.45)] animate-bbFadeDown">{V.L.mapHint}</div>
             </>
           )}
-          {/* The bottom-right stack of hovered-category preview cards used to
-              live here. Top-rated places are now shown only on the floating
-              rock cards above, so the corner stays empty. */}
+          {/* The three best-rated places in whichever category the cursor is
+              on. It reads as the other half of the hover: the background photo
+              behind the list changes to say which category you are on, and
+              this says what is actually in it.
+
+              Bottom-right because the category list owns the left side and the
+              corner is otherwise empty photograph. The one thing it does share
+              the space with is the aimag map, which reaches down to
+              bottom-[114px] while these stand 200px off a bottom-11 edge — so
+              with the map open the top half of the cards covers its lower-right
+              corner. Left that way rather than gated behind locOpen: hovering a
+              category with the map open is a normal thing to do, and answering
+              the hover with nothing at all would be the worse of the two.
+
+              Absent, not empty, when the hovered category has no places in the
+              chosen aimag: three blank frames would say the category is broken
+              rather than that this aimag has nothing in it yet. */}
+          {V.previewCards.length > 0 && (
+            <div
+              key={V.previewCards[0].key}
+              // The list clears the hover on mouseleave, and the cursor has to
+              // leave it to get all the way over here — so the row holds the
+              // clear off for as long as it is under the cursor, and lets it
+              // run again on the way out.
+              onMouseEnter={V.holdActive}
+              onMouseLeave={V.clearActive}
+              className="absolute right-12 bottom-11 z-10 flex items-end gap-[14px]"
+            >
+              {V.previewCards.map((c: any, i: number) => (
+                <button
+                  key={c.key}
+                  onClick={c.open}
+                  aria-label={c.name}
+                  // Staggered so the three read as one group arriving rather
+                  // than three things appearing at once. The wrapper's `key` is
+                  // the first card's, which makes React rebuild the row when
+                  // the hover moves to another category — otherwise the cards
+                  // are reused in place, the animation never re-runs, and the
+                  // photos swap under a stack that never moved.
+                  style={{ animationDelay: (i * 80) + 'ms' }}
+                  className="animate-bbCardIn relative block h-[200px] w-[160px] cursor-pointer overflow-hidden rounded-[18px] border border-[rgba(255,255,255,.1)] bg-transparent p-0 text-left transition-[border-color,transform] duration-200 hover:-translate-y-1 hover:border-[var(--accent,#E8B84B)]"
+                >
+                  <BgMedia bg={c.thumb} className="absolute inset-0" imgClassName="bg-cover bg-center" />
+                  <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,_rgba(0,0,0,.18)_0%,_rgba(0,0,0,0)_35%,_rgba(0,0,0,.32)_62%,_rgba(0,0,0,.92)_100%)]"></div>
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 px-[15px] py-[13px]">
+                    <div className="mb-[7px] flex items-center gap-1">
+                      <span className="text-[11px] leading-none text-[var(--accent,#E8B84B)]">★</span>
+                      <span className="text-[11.5px] font-extrabold leading-none text-cream-2">{c.rating}</span>
+                    </div>
+                    <div className="text-[14px] font-extrabold leading-[1.2] tracking-[-0.01em] text-cream-2">{c.name}</div>
+                    {c.meta && <div className="mt-1 truncate text-[11.5px] text-[rgba(242,237,227,.62)]">{c.meta}</div>}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </>
       )}
     </section>
