@@ -16,6 +16,7 @@
     "seed:coop-games": "bun run prisma/seed-coop-games.ts",
     "seed:boardgames": "bun run prisma/seed-boardgames.ts",
     "seed:movies": "bun run prisma/seed-movies.ts",
+    "seed:category-mocks": "bun run prisma/seed-category-mocks.ts",
     "sync:osm": "bun run scripts/sync-osm-layers.ts",
     "sync:protected": "bun run scripts/sync-protected-areas.ts",
     "sync:country-sites": "bun run prisma/sync-country-sites.ts",
