@@ -245,8 +245,8 @@ export default function MarauderLoader({ loop = true, onFinish, duration = 5000,
         </svg>
       </div>
 
-      <div className={`mloader__oath top${finished ? ' gone' : ''}`}>i solemnly swear that</div>
-      <div className={`mloader__oath bottom${finished ? ' gone' : ''}`}>i am up to no good</div>
+      <div className={`mloader__oath top${finished ? ' gone' : ''}`}>Finding your next favorite place</div>
+      <div className={`mloader__oath bottom${finished ? ' gone' : ''}`}>powered by Atlas</div>
 
       <div className={`mloader__pct${finished ? ' gone' : ''}`}>{Math.round(progress * 100)}%</div>
     </div>
@@ -337,7 +337,7 @@ const CSS = `
 
 .mloader__oath{
   position:absolute; z-index:4; font-size:clamp(15px,3.6vw,22px);
-  letter-spacing:.15em; color:var(--ml-ink-soft); text-transform:lowercase;
+  letter-spacing:.15em; color:var(--ml-ink-soft);
   opacity:.9; transition:opacity .5s ease;
 }
 .mloader__oath.top{ top:6.5%; left:7%; } .mloader__oath.bottom{ bottom:6.5%; right:7%; }
