@@ -3,7 +3,7 @@
 // Big Bang — Place detail (/category/:slug/place/:index). Rebuilds its data
 // straight from CATS + the URL params, same as openPlace() used to build it via setState.
 import React, { useContext } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { notFound, useParams, useRouter } from 'next/navigation';
 import { Accessibility, Heart, MapPin, Phone, Star } from 'lucide-react';
 import { BigBangContext } from '@/components/bigbang/BigBangLayout';
 import { imgUrl, aimagName, mapsUrlFor, FCRIT } from '@/components/bigbang/data';
@@ -24,23 +24,37 @@ export default function PlaceDetail() {
   const lang = V.lang;
 
   const cats = V.cats || [];
-  const cat = cats.find((c: any) => c.slug === slug) || cats[0] || { slug: '', name: '', nameEn: '', pool: [], items: [] };
-  const i = Math.max(0, Math.min(Number(index) || 0, cat.items.length - 1));
-  const it = cat.items[i];
+  // No fallback to cats[0] — see the matching note on the category page.
+  const cat = cats.find((c: any) => c.slug === slug);
+  const items: any[] = cat ? cat.items : [];
+  const i = Math.max(0, Math.min(Number(index) || 0, items.length - 1));
+  const it = items[i];
 
+  // Sits above the two guards below rather than next to the values it feeds,
+  // because both of them leave this component early and a hook cannot stand
+  // behind an early return. livePlaces only arrives in componentDidMount, so
+  // opening this page by URL — a shared link, or a refresh — renders it once
+  // with no items and again with them; a hook reached only on the second pass
+  // is one more than the first ran, which React answers by tearing the whole
+  // tree down. Stays idle until there is a place to ask about.
+  const targetKey = it ? ratingTargetKey('place', it.id) : '';
+  React.useEffect(() => {
+    if (!targetKey) return;
+    let cancelled = false;
+    getRatingSummary(targetKey, V.mySessionToken).then((s) => { if (!cancelled) setRatingSummary(s); }).catch(() => {});
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetKey, V.mySessionToken]);
+
+  if (!cat) notFound();
+  // A real place index that simply has not loaded yet — blank for the one
+  // render before fetchLiveContent answers, not a 404.
   if (!it) return null;
 
   const access = !!it.access;
   const gallery = it.images && it.images.length ? it.images : [it.img || ''];
   const favKey = 'p:' + cat.slug + ':' + it.name;
   const favOn = !!V.favs[favKey];
-  const targetKey = ratingTargetKey('place', it.id);
-  React.useEffect(() => {
-    let cancelled = false;
-    getRatingSummary(targetKey, V.mySessionToken).then((s) => { if (!cancelled) setRatingSummary(s); }).catch(() => {});
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [targetKey, V.mySessionToken]);
   const rateThis = async (score: number) => {
     if (!V.loggedIn) { V.openUserAuth(); return; }
     try {

@@ -2,7 +2,7 @@
 
 // Big Bang — Category grid (/category/:slug).
 import React, { useContext } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { notFound, useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Accessibility, Heart } from 'lucide-react';
 import { BigBangContext } from '@/components/bigbang/BigBangLayout';
 import { ratingOf, catBgOf, itemThumbOf, aimagName, isVideoUrl } from '@/components/bigbang/data';
@@ -21,7 +21,14 @@ export default function CategoryPage() {
   React.useEffect(() => { setSub(subParam || 'Бүгд'); }, [slug, subParam]);
 
   const cats: any[] = V.cats || [];
-  const cat: any = cats.find((c: any) => c.slug === slug) || cats[0] || { slug: '', num: '', name: '', nameEn: '', desc: '', descEn: '', hero: '', pool: [], subs: [], items: [] };
+  // No fallback to cats[0]: liveCats() always returns the four static CATS
+  // shells — on the server too, before any place has loaded — so a miss here
+  // is a slug that doesn't exist, not data still arriving. Falling back
+  // rendered Хоол under whatever was typed, and the first card click then
+  // quietly rewrote the URL to /category/food/..., so nothing ever looked
+  // wrong. Unknown routes go to app/not-found.tsx like every other one.
+  const cat: any = cats.find((c: any) => c.slug === slug);
+  if (!cat) notFound();
   const accent = V.accent;
   const L = V.L;
 
@@ -34,14 +41,20 @@ export default function CategoryPage() {
     <button key={ch.label} onClick={ch.on} className="cursor-pointer rounded-full py-1.5 px-[13px] text-[12.5px] font-semibold transition-all duration-[250ms]" style={{ border: `1px solid ${ch.border}`, background: ch.bg, color: ch.color }}>{ch.label}</button>
   );
 
+  // Each item keeps its index into the unfiltered cat.items, because that is
+  // what /category/:slug/place/:index resolves against. Numbering the
+  // filtered list instead would open a different place as soon as a
+  // sub-category chip or an aimag is selected — the event and scenic rails
+  // already carry their original index this way (see openEventDetail).
   const gridItems = cat.items
-    .filter((it: any) => (sub === 'Бүгд' || it.sub === sub) && (V.aimag === 'Бүгд' || (it.aimag || 'Улаанбаатар') === V.aimag))
-    .map((it: any, i: number) => {
+    .map((it: any, idx: number) => ({ it, idx }))
+    .filter(({ it }: any) => (sub === 'Бүгд' || it.sub === sub) && (V.aimag === 'Бүгд' || (it.aimag || 'Улаанбаатар') === V.aimag))
+    .map(({ it, idx }: any) => {
       const key = 'p:' + cat.slug + ':' + it.name;
       const acc = !!it.access;
       return {
         ...it, rating: ratingOf(it.name), access: acc, accShow: acc ? 'flex' : 'none',
-        openPlace: () => { router.push('/category/' + cat.slug + '/place/' + i); try { window.scrollTo(0, 0); } catch (err) { /* ignore */ } },
+        openPlace: () => { router.push('/category/' + cat.slug + '/place/' + idx); try { window.scrollTo(0, 0); } catch (err) { /* ignore */ } },
         toggleFav: V.toggleFav(key), favOn: !!V.favs[key], heartColor: V.favs[key] ? accent : 'rgba(242,237,227,.9)',
         thumb: itemThumbOf(it.img).replace('rgba(0,0,0,.12)', 'rgba(0,0,0,.05)').replace('rgba(0,0,0,.42)', 'rgba(0,0,0,.15)'),
         displayMeta: it.meta + ' · ' + aimagName(it.aimag || 'Улаанбаатар', V.lang),
