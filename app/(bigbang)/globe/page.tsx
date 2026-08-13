@@ -252,11 +252,6 @@ function EmpireDossier({ V, className }: { V: any; className: string }) {
           and in a landscape card the crop keeps a face and throws the rest away.
           Anchored to the top of the frame for the same reason: on a portrait the
           head is up there, and centring a tall picture in a short card cuts it. */}
-      <DossierCard
-        label={d.labels.ruler} name={d.ruler.name} sub={d.ruler.reign} img={d.ruler.img} note={d.ruler.photo} accent={d.color}
-        heightClass="min-h-[190px] max-h-[560px] flex-1"
-        focus="bg-top"
-      />
       {/* The ruler card takes whatever the other two leave. Fixed heights can't
           do this: the facts card runs 2–3 paragraphs depending on the empire and
           the column's own height depends on the window, so any number tuned to
@@ -267,24 +262,44 @@ function EmpireDossier({ V, className }: { V: any; className: string }) {
           Its floor and ceiling are the two things flex can get wrong: without
           the floor a long set of facts squashes the portrait to a strip, and
           without the ceiling a tall empty window stretches it past the point
-          where the crop still looks like a portrait. */}
+          where the crop still looks like a portrait.
+
+          The floor is also what the portrait gets on most real windows, so it,
+          not the ceiling, is the number that decides how big this card reads —
+          190px cropped a painting down to a head and a collar. It gives way on
+          a short window rather than pushing the stack off the bottom: a minimum
+          height taller than the room going spare is exactly what forces the
+          scroll it exists to prevent. Past about 920px of viewport the 240
+          wins and none of this moves. */}
+      <DossierCard
+        label={d.labels.ruler} name={d.ruler.name} sub={d.ruler.reign} img={d.ruler.img} note={d.ruler.photo} accent={d.color}
+        heightClass="min-h-[min(240px,26dvh)] max-h-[640px] flex-1"
+        focus="bg-top"
+      />
+      {/* A cityscape reads fine in a letterbox — a portrait does not — so when
+          the column is tight this is the card that gives its pixels up to the
+          one above it. */}
       <DossierCard
         label={d.labels.capital} name={d.capital.name} img={d.capital.img} note={d.capital.photo} accent={d.color}
-        heightClass="h-[clamp(120px,14dvh,200px)] flex-none"
+        heightClass="h-[clamp(104px,12dvh,180px)] flex-none"
       />
+      {/* The tallest thing in the column and the only one whose height comes
+          from its content, so it is what pushes the stack past the bottom of
+          the screen. Set tight on purpose: three facts run long in Mongolian,
+          and every line saved here is a line the portrait above gets back. */}
       {d.facts.length > 0 && (
-        <div className="flex-none rounded-2xl border border-[rgba(255,255,255,.1)] bg-[rgba(14,14,14,.92)] px-[14px] py-3 shadow-[0_16px_40px_rgba(0,0,0,.28)] backdrop-blur-[12px]">
-          <div className="mb-2 flex items-center gap-[5px]">
+        <div className="flex-none rounded-2xl border border-[rgba(255,255,255,.1)] bg-[rgba(14,14,14,.92)] px-[14px] py-2.5 shadow-[0_16px_40px_rgba(0,0,0,.28)] backdrop-blur-[12px]">
+          <div className="mb-1.5 flex items-center gap-[5px]">
             <span className="h-[8px] w-[8px] flex-none rounded-[3px] ring-1 ring-inset ring-[rgba(0,0,0,.4)]" style={{ background: d.color }}></span>
             <span className="font-[ui-monospace,SFMono-Regular,Menlo,monospace] text-[10px] font-semibold uppercase tracking-[.06em] text-[rgba(242,237,227,.7)]">{d.labels.facts}</span>
           </div>
           {/* Marked with the empire's own colour rather than a bullet, so the
               three cards keep saying which empire they belong to even once the
               reader has scrolled the legend out of the corner of their eye. */}
-          <ul className="flex flex-col gap-[7px]">
+          <ul className="flex flex-col gap-[5px]">
             {d.facts.map((f: string, i: number) => (
-              <li key={i} className="flex gap-2 text-[11.5px] leading-[1.45] text-[#cfcfcf]">
-                <span className="mt-[6px] h-[4px] w-[4px] flex-none rounded-full" style={{ background: d.color }}></span>
+              <li key={i} className="flex gap-2 text-[11px] leading-[1.4] text-[#cfcfcf]">
+                <span className="mt-[5px] h-[4px] w-[4px] flex-none rounded-full" style={{ background: d.color }}></span>
                 <span className="min-w-0">{f}</span>
               </li>
             ))}
@@ -368,8 +383,10 @@ export default function GlobePage() {
               would leave the globe itself a letterbox between them. */}
           {!V.globeHasCard && (
             <div className="absolute inset-x-4 top-[128px] z-[6]">
-              {/* Same one-line pairing as the desktop column above. */}
-              <div className="flex items-center gap-3">
+              {/* Same one-line pairing as the desktop column above, and the
+                  same italic-lean problem — a little less of it at 24px, and a
+                  phone has less width to spend, so 20 here against the 28. */}
+              <div className="flex items-center gap-5">
                 <button onClick={V.openPin} className="inline-flex flex-none cursor-pointer items-center gap-2 border-0 bg-transparent p-0 font-[inherit] text-[13px] font-semibold text-[#858585]">{V.L.back}</button>
                 <div className="pointer-events-none font-display italic text-[24px] leading-[1.05] text-[#f2f2f2]">{V.globeTitle}</div>
               </div>
@@ -429,14 +446,21 @@ export default function GlobePage() {
       {/* 64px is the floor, not a preference. The nav is fixed at top-0 with
           z-[60] and 18px of padding over a 28px row (the avatar, the tallest
           thing in it), so it ends at 64px — and this column starts at the same
-          x as the "Atlas" logo, which means anything higher slides behind it. */}
-      <div className="absolute left-12 min-[1920px]:left-14 top-[64px] z-[6] flex flex-col gap-4">
+          x as the "Atlas" logo, which means anything higher slides behind it.
+          Sitting exactly on that floor read as tucked under the nav, so the
+          column carries 20px of air below it instead. */}
+      <div className="absolute left-12 min-[1920px]:left-14 top-[84px] z-[6] flex flex-col gap-4">
         <div>
           {/* Back and title on one line, back first. Centred, not baseline-
               aligned: sharing the title's baseline drops a 13px label to the
               foot of a 30px italic and reads as sunk. Centring lifts it about
-              six pixels, onto the title's optical middle. */}
-          <div className="flex items-center gap-4">
+              six pixels, onto the title's optical middle.
+
+              28px rather than the 16 it used to carry. An italic display face
+              leans its first letter back over the gap, so the metric space and
+              the space you see are not the same number — at 16px the "Д" was
+              sitting on the end of the label. */}
+          <div className="flex items-center gap-7">
             <button onClick={V.openPin} className="inline-flex flex-none cursor-pointer items-center gap-2 border-0 bg-transparent p-0 font-[inherit] text-[13px] font-semibold text-[#858585] transition-colors duration-[250ms] hover:text-[#E8B84B]">{V.L.back}</button>
             <div className="pointer-events-none font-display italic text-[30px] leading-[1.05] text-[#f2f2f2]">{V.globeTitle}</div>
           </div>
@@ -533,9 +557,19 @@ export default function GlobePage() {
         <EmpireDossier
           V={V}
           // A definite height, not a max: flex-1 on the ruler card has nothing
-          // to divide up unless the column knows how tall it is. 180px keeps its
-          // top clear of the nav; the bottom is pinned at bottom-4 as before.
-          className="absolute right-12 min-[1920px]:right-14 bottom-4 z-[8] flex h-[calc(100dvh-180px)] w-[clamp(200px,16vw,270px)] min-[1920px]:w-[410px] flex-col gap-[10px] overflow-y-auto"
+          // to divide up unless the column knows how tall it is. The bottom is
+          // pinned at bottom-4, so 100px puts the top at 84px — level with the
+          // title column opposite, and the first line clear of the nav. It used
+          // to start 80px lower than that for no reason the layout needed, and
+          // those were 80px the stack had to scroll to get back.
+          // Wider than the country column it replaces, which is the cheapest
+          // vertical room on the screen: the facts card is a paragraph, so
+          // every 60px of width takes two or three lines off its height and
+          // hands them to the portrait. It can afford them — the dossier and
+          // the country cards never show at once, so the only thing to stay
+          // clear of is the history bar across the bottom centre, and 20vw
+          // keeps a margin from it down to about 1024px.
+          className="absolute right-12 min-[1920px]:right-14 bottom-4 z-[8] flex h-[calc(100dvh-100px)] w-[clamp(200px,20vw,330px)] min-[1920px]:w-[410px] flex-col gap-[10px] overflow-y-auto"
         />
       )}
       {V.globeHasCard && (
