@@ -477,7 +477,7 @@ export default function GlobePage() {
               control that changes nothing about what the globe shows, only how
               it is held, so it belongs beside the field rather than off in a
               corner of its own. */}
-          <div className="mt-1 flex items-center gap-2">
+          <div className="mt-3 flex items-center gap-2">
           <div className="relative z-[31] w-[280px] min-[1920px]:w-[350px]">
             <input
               value={V.globeQuery}
