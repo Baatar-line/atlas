@@ -63,3 +63,4 @@ react-app/
 
 `API & Database` дэлгэцийг мөн адил `src/screens/` дор `.tsx` болгож нэмэх
 бөгөөд `App.tsx`-д route холбоно.
+# atlas
